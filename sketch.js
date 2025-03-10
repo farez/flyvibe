@@ -61,11 +61,11 @@ let challengeButton;
 let nameInputActive = false;
 let nameInput = "";
 let cursorBlink = 0;
-let gameMode = "normal"; // normal, tailwind, impossible
+let gameMode = "normal"; // normal, tailwind, stormy
 let gameModifiers = {
   normal: { speedMultiplier: 1, gravityMultiplier: 0.25, pointsMultiplier: 1 },
   tailwind: { speedMultiplier: 1.5, gravityMultiplier: 0.25, pointsMultiplier: 2 },
-  impossible: { speedMultiplier: 2, gravityMultiplier: 1.5, pointsMultiplier: 5 }
+  stormy: { speedMultiplier: 1, gravityMultiplier: 0.25, pointsMultiplier: 5 }
 };
 let streakCount = 0;
 let perfectPass = false;
@@ -303,6 +303,14 @@ class Vehicle {
     this.isDead = false;
     this.trail = [];
 
+    // Weather effects for stormy mode
+    this.weatherEffectTimer = 0;
+    this.weatherEffectDuration = 0;
+    this.weatherEffectType = null; // 'airpocket', 'headwind', 'tailwind'
+    this.weatherEffectIntensity = 0;
+    this.weatherEffectWarning = false;
+    this.weatherEffectCooldown = 0; // Cooldown between weather effects
+
     // Blue paper colors for effects
     this.mainBlue = color(65, 105, 225);      // Royal blue
     this.darkBlue = color(30, 60, 180);       // Darker shade for shadows
@@ -313,6 +321,139 @@ class Vehicle {
     if (!this.isDead) {
       // Update velocity and position
       this.velocity += this.gravity;
+
+      // Apply weather effects in stormy mode
+      if (gameMode === 'stormy') {
+        // Update existing weather effect
+        if (this.weatherEffectType) {
+          this.weatherEffectTimer--;
+
+          // Check if we're transitioning from warning to actual effect
+          if (this.weatherEffectWarning && this.weatherEffectTimer <= this.weatherEffectDuration) {
+            this.weatherEffectWarning = false;
+
+            // Show the "now happening" message
+            let message = "";
+            switch(this.weatherEffectType) {
+              case 'airpocket':
+                message = "Air Pocket!";
+                break;
+              case 'headwind':
+                message = "Headwind!";
+                break;
+              case 'tailwind':
+                message = "Tailwind!";
+                break;
+            }
+
+            currentMessage = message;
+            messageAlpha = 255;
+
+            // Create another burst of particles when the effect actually starts
+            for (let i = 0; i < 15; i++) {
+              let particleColor;
+              if (this.weatherEffectType === 'airpocket') {
+                particleColor = color(100, 100, 100, 200);
+              } else if (this.weatherEffectType === 'headwind') {
+                particleColor = color(200, 100, 100, 200);
+              } else if (this.weatherEffectType === 'tailwind') {
+                particleColor = color(100, 200, 100, 200);
+              }
+
+              particles.push(new Particle(
+                this.x + random(-20, 20),
+                this.y + random(-20, 20),
+                random(-2, 2),
+                random(-2, 2),
+                random(5, 10),
+                particleColor
+              ));
+            }
+          }
+
+          // Only apply the effect if we're past the warning phase
+          if (!this.weatherEffectWarning) {
+            // Apply the current weather effect
+            switch(this.weatherEffectType) {
+              case 'airpocket':
+                // Subtle drop - increase gravity very slightly
+                this.velocity += this.weatherEffectIntensity;
+                break;
+              case 'headwind':
+                // Slow down pipes temporarily
+                // This is handled in the updateGameplay function
+                break;
+              case 'tailwind':
+                // Speed up pipes temporarily
+                // This is handled in the updateGameplay function
+                break;
+            }
+          }
+
+          // Create weather effect particles
+          if (frameCount % 3 === 0) {
+            // Only create effect particles if we're past the warning phase
+            if (!this.weatherEffectWarning) {
+              let particleColor;
+              if (this.weatherEffectType === 'airpocket') {
+                particleColor = color(100, 100, 100, 150); // Gray for air pocket
+              } else if (this.weatherEffectType === 'headwind') {
+                particleColor = color(200, 100, 100, 150); // Red for headwind
+              } else if (this.weatherEffectType === 'tailwind') {
+                particleColor = color(100, 200, 100, 150); // Green for tailwind
+              }
+
+              particles.push(new Particle(
+                this.x + random(-20, 20),
+                this.y + random(-20, 20),
+                random(-2, 2),
+                random(-2, 2),
+                random(3, 8),
+                particleColor
+              ));
+            }
+            // Create occasional warning particles during warning phase
+            else if (random() < 0.3) {
+              let particleColor;
+              if (this.weatherEffectType === 'airpocket') {
+                particleColor = color(100, 100, 100, 100); // Gray for air pocket
+              } else if (this.weatherEffectType === 'headwind') {
+                particleColor = color(200, 100, 100, 100); // Red for headwind
+              } else if (this.weatherEffectType === 'tailwind') {
+                particleColor = color(100, 200, 100, 100); // Green for tailwind
+              }
+
+              // Create particles ahead of the plane during warning
+              particles.push(new Particle(
+                this.x + random(50, 100),
+                this.y + random(-30, 30),
+                random(-1, 1),
+                random(-1, 1),
+                random(3, 6),
+                particleColor
+              ));
+            }
+          }
+
+          // End the weather effect when timer expires
+          if (this.weatherEffectTimer <= 0) {
+            this.weatherEffectType = null;
+            this.weatherEffectWarning = false;
+
+            // Set a random cooldown period between 5-30 seconds (300-1800 frames at 60fps)
+            this.weatherEffectCooldown = floor(random(300, 1800));
+          }
+        }
+        // Check cooldown timer
+        else if (this.weatherEffectCooldown > 0) {
+          this.weatherEffectCooldown--;
+        }
+        // Randomly create new weather effects only if cooldown is over
+        else if (random() < 0.02) { // 2% chance per frame when cooldown is over
+          this.startWeatherEffect();
+        }
+      }
+
       this.y += this.velocity;
 
       // Animate rotation based on velocity
@@ -422,6 +563,70 @@ class Vehicle {
       flashOpacity = 255;
       shakeAmount = 10;
     }
+  }
+
+  // Start a random weather effect for stormy mode
+  startWeatherEffect() {
+    // Choose a random weather effect type
+    const effectTypes = ['airpocket', 'headwind', 'tailwind'];
+    this.weatherEffectType = random(effectTypes);
+
+    // Set duration based on effect type
+    switch(this.weatherEffectType) {
+      case 'airpocket':
+        // Short but less intense
+        this.weatherEffectDuration = floor(random(20, 40));
+        this.weatherEffectIntensity = random(0.05, 0.1); // Reduced from 0.2-0.4 to 0.05-0.1
+        break;
+      case 'headwind':
+      case 'tailwind':
+        // Longer duration
+        this.weatherEffectDuration = floor(random(60, 120));
+        this.weatherEffectIntensity = random(0.5, 1.5);
+        break;
+    }
+
+    // Add 3 seconds (180 frames at 60fps) warning before the effect starts
+    this.weatherEffectTimer = this.weatherEffectDuration + 180;
+    this.weatherEffectWarning = true; // Flag to indicate we're in warning phase
+
+    // Create a burst of warning particles
+    for (let i = 0; i < 10; i++) {
+      let particleColor;
+      if (this.weatherEffectType === 'airpocket') {
+        particleColor = color(100, 100, 100, 200); // Gray for air pocket
+      } else if (this.weatherEffectType === 'headwind') {
+        particleColor = color(200, 100, 100, 200); // Red for headwind
+      } else if (this.weatherEffectType === 'tailwind') {
+        particleColor = color(100, 200, 100, 200); // Green for tailwind
+      }
+
+      particles.push(new Particle(
+        this.x + random(-10, 10),
+        this.y + random(-10, 10),
+        random(-2, 2),
+        random(-2, 2),
+        random(5, 10),
+        particleColor
+      ));
+    }
+
+    // Add a warning message
+    let message = "";
+    switch(this.weatherEffectType) {
+      case 'airpocket':
+        message = "Air Pocket Ahead!";
+        break;
+      case 'headwind':
+        message = "Headwind Approaching!";
+        break;
+      case 'tailwind':
+        message = "Tailwind Coming!";
+        break;
+    }
+
+    currentMessage = message;
+    messageAlpha = 255;
   }
 }
 
@@ -814,7 +1019,7 @@ let continueButton;
   // Create mode selection buttons
   normalModeButton = new Button(width/2 - 130, height/2 + 100, 120, 40, "NORMAL", () => selectGameMode("normal"));
   tailwindModeButton = new Button(width/2, height/2 + 100, 120, 40, "TAILWIND", () => selectGameMode("tailwind"));
-  impossibleModeButton = new Button(width/2 + 130, height/2 + 100, 120, 40, "IMPOSSIBLE", () => selectGameMode("impossible"));
+  stormyModeButton = new Button(width/2 + 130, height/2 + 100, 120, 40, "STORMY", () => selectGameMode("stormy"));
 
   // Create background layers for parallax effect
   let skyColor = color(135, 206, 235);
@@ -955,12 +1160,12 @@ function drawStartScreen() {
   // Update and show mode buttons
   normalModeButton.update();
   tailwindModeButton.update();
-  impossibleModeButton.update();
+  stormyModeButton.update();
 
   // Draw button backgrounds with stronger colors
   normalModeButton.show();
   tailwindModeButton.show();
-  impossibleModeButton.show();
+  stormyModeButton.show();
 
   // Highlight selected mode with a more visible outline
   strokeWeight(4);
@@ -975,7 +1180,7 @@ function drawStartScreen() {
       stroke(255, 200, 0);
       rect(width/2 - 60, height/2 + 100 - 20, 120, 40, 10);
       break;
-    case "impossible":
+    case "stormy":
       stroke(255, 50, 50);
       rect(width/2 + 130 - 60, height/2 + 100 - 20, 120, 40, 10);
       break;
@@ -992,7 +1197,7 @@ function drawStartScreen() {
   text("Wind Boost", width/2, height/2 + 130);
   text("2× Points", width/2, height/2 + 145);
 
-  text("Hardest", width/2 + 130, height/2 + 130);
+  text("Turbulence", width/2 + 130, height/2 + 130);
   text("5× Points", width/2 + 130, height/2 + 145);
 }
 
@@ -1048,7 +1253,20 @@ function updateGameplay() {
     if (!pipes[i]) continue;
 
     // Update pipe speed and position
-    pipes[i].speed = 2 * gameSpeed * modifier.speedMultiplier;
+    let pipeSpeed = 2 * gameSpeed * modifier.speedMultiplier;
+
+    // Apply weather effects to pipe speed in stormy mode
+    if (gameMode === 'stormy' && vehicle.weatherEffectType && !vehicle.weatherEffectWarning) {
+      if (vehicle.weatherEffectType === 'headwind') {
+        // Slow down pipes for headwind
+        pipeSpeed *= (1 - vehicle.weatherEffectIntensity * 0.3); // Reduce by up to 30%
+      } else if (vehicle.weatherEffectType === 'tailwind') {
+        // Speed up pipes for tailwind
+        pipeSpeed *= (1 + vehicle.weatherEffectIntensity * 0.5); // Increase by up to 50%
+      }
+    }
+
+    pipes[i].speed = pipeSpeed;
     pipes[i].update();
 
     // Check for collision
@@ -1186,7 +1404,7 @@ function drawGameplay() {
     case "tailwind":
       modeColor = color(255, 200, 0);
       break;
-    case "impossible":
+    case "stormy":
       modeColor = color(255, 50, 50);
       break;
   }
@@ -1264,7 +1482,7 @@ function drawGameOverScreen() {
     case "tailwind":
       modeColor = color(200, 150, 0);
       break;
-    case "impossible":
+    case "stormy":
       modeColor = color(200, 0, 0);
       break;
   }
@@ -1385,8 +1603,8 @@ function drawAdScreen() {
       return;
     }
 
-    if (impossibleModeButton.click()) {
-      selectGameMode("impossible");
+    if (stormyModeButton.click()) {
+      selectGameMode("stormy");
       return;
     }
 
@@ -1511,6 +1729,13 @@ function startGame() {
 // Reset the game to initial state
 function resetGame() {
   vehicle = new Vehicle();
+
+  // Reset any active weather effects
+  vehicle.weatherEffectType = null;
+  vehicle.weatherEffectTimer = 0;
+  vehicle.weatherEffectWarning = false;
+  vehicle.weatherEffectCooldown = floor(random(300, 600)); // Start with a random cooldown (5-10 seconds)
+
   pipes = [];
   score = 0;
   scoreAnimation = { value: 0, target: 0, speed: 0.1 };
@@ -1552,7 +1777,7 @@ function selectGameMode(mode) {
     case "tailwind":
       particleColor = color(255, 200, 0);
       break;
-    case "impossible":
+    case "stormy":
       particleColor = color(255, 50, 50);
       break;
   }
