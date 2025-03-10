@@ -144,21 +144,113 @@ function createPlaceholderSpritesheet() {
   let sheet = createGraphics(300, 150);
   sheet.background(0, 0);
 
-  // Draw plane frames (3 frames)
+  // Draw paper plane frames (3 frames with slight animation)
   for (let i = 0; i < 3; i++) {
-    sheet.fill(0, 0, 255);
-    sheet.noStroke();
     let x = i * 34 + 17;
     let y = 12;
-    sheet.triangle(x - 10, y, x + 10, y - 5, x + 10, y + 5);
+
+    // Blue paper colors - different shades for 3D effect
+    let mainBlue = color(65, 105, 225);      // Royal blue
+    let darkBlue = color(30, 60, 180);       // Darker shade for shadows
+    let lightBlue = color(100, 150, 255);    // Lighter shade for highlights
+
+    // Draw the paper plane body - main triangle
+    sheet.fill(mainBlue);
+    sheet.noStroke();
+    sheet.beginShape();
+    sheet.vertex(x - 15, y);                 // Back point
+    sheet.vertex(x + 10, y - 2 + (i * 0.5)); // Front point (slight animation)
+    sheet.vertex(x - 15, y + 8);             // Bottom back point
+    sheet.endShape(CLOSE);
+
+    // Top fold - creates the 3D effect of folded paper
+    sheet.fill(lightBlue);
+    sheet.beginShape();
+    sheet.vertex(x - 15, y);                 // Back point
+    sheet.vertex(x + 10, y - 2 + (i * 0.5)); // Front point
+    sheet.vertex(x - 3, y - 5 + (i * 0.2));  // Top fold point
+    sheet.endShape(CLOSE);
+
+    // Bottom fold - shadow side
+    sheet.fill(darkBlue);
+    sheet.beginShape();
+    sheet.vertex(x - 15, y);                 // Back point
+    sheet.vertex(x - 3, y + 4);              // Center fold point
+    sheet.vertex(x - 15, y + 8);             // Bottom back point
+    sheet.endShape(CLOSE);
+
+    // Wing fold - right side
+    sheet.fill(lightBlue);
+    sheet.beginShape();
+    sheet.vertex(x - 15, y);                 // Back point
+    sheet.vertex(x - 3, y - 5 + (i * 0.2));  // Top fold point
+    sheet.vertex(x - 3, y + 4);              // Center fold point
+    sheet.endShape(CLOSE);
+
+    // Wing fold - left side (shadow)
+    sheet.fill(darkBlue);
+    sheet.beginShape();
+    sheet.vertex(x - 15, y + 8);             // Bottom back point
+    sheet.vertex(x - 3, y + 4);              // Center fold point
+    sheet.vertex(x + 10, y - 2 + (i * 0.5)); // Front point
+    sheet.endShape(CLOSE);
+
+    // Fold lines - more prominent
+    sheet.stroke(30, 60, 180, 180);
+    sheet.strokeWeight(0.8);
+    // Center crease
+    sheet.line(x - 15, y, x + 10, y - 2 + (i * 0.5));
+    // Wing creases
+    sheet.line(x - 15, y, x - 3, y - 5 + (i * 0.2));
+    sheet.line(x - 15, y, x - 3, y + 4);
+    sheet.line(x - 3, y - 5 + (i * 0.2), x + 10, y - 2 + (i * 0.5));
+    sheet.line(x - 3, y + 4, x + 10, y - 2 + (i * 0.5));
+    sheet.line(x - 15, y + 8, x - 3, y + 4);
   }
 
-  // Draw dead plane frame
-  sheet.fill(255, 0, 0);
-  sheet.noStroke();
+  // Draw dead paper plane frame (crumpled blue paper)
   let x = 17;
   let y = 36;
-  sheet.triangle(x - 10, y, x + 10, y - 5, x + 10, y + 5);
+
+  // Crumpled paper base - blue
+  sheet.fill(65, 105, 225);
+  sheet.noStroke();
+  sheet.beginShape();
+  sheet.vertex(x - 12, y - 2);
+  sheet.vertex(x - 5, y - 7);
+  sheet.vertex(x + 3, y - 3);
+  sheet.vertex(x + 8, y - 6);
+  sheet.vertex(x + 10, y + 2);
+  sheet.vertex(x + 5, y + 5);
+  sheet.vertex(x - 2, y + 3);
+  sheet.vertex(x - 8, y + 6);
+  sheet.endShape(CLOSE);
+
+  // Darker blue areas for crumpled effect
+  sheet.fill(30, 60, 180);
+  sheet.beginShape();
+  sheet.vertex(x - 5, y - 7);
+  sheet.vertex(x + 3, y - 3);
+  sheet.vertex(x - 2, y + 3);
+  sheet.vertex(x - 8, y + 6);
+  sheet.endShape(CLOSE);
+
+  // Lighter blue highlights
+  sheet.fill(100, 150, 255);
+  sheet.beginShape();
+  sheet.vertex(x + 3, y - 3);
+  sheet.vertex(x + 8, y - 6);
+  sheet.vertex(x + 10, y + 2);
+  sheet.vertex(x + 5, y + 5);
+  sheet.endShape(CLOSE);
+
+  // Crumple lines
+  sheet.stroke(30, 60, 180);
+  sheet.strokeWeight(0.7);
+  sheet.line(x - 5, y - 7, x + 5, y + 5);
+  sheet.line(x + 3, y - 3, x - 8, y + 6);
+  sheet.line(x - 12, y - 2, x + 10, y + 2);
+  sheet.line(x + 8, y - 6, x - 2, y + 3);
 
   // Draw pipe parts - SIMPLIFIED
   // Top obstacle (single color)
@@ -169,12 +261,25 @@ function createPlaceholderSpritesheet() {
   sheet.fill(0, 0, 255); // Bright blue for bottom obstacle
   sheet.rect(0, 86, 52, 26);
 
-  // Draw cloud types
+  // Draw cloud types - without outlines
   for (let i = 0; i < 3; i++) {
-    sheet.fill(255, 200);
     let cloudX = 104 + (i * 60);
-    sheet.ellipse(cloudX + 20, 15, 40, 20);
-    sheet.ellipse(cloudX + 35, 15, 25, 15);
+
+    // Create a soft, simple cloud
+    sheet.noStroke();
+
+    // Base cloud - very soft white with high transparency
+    sheet.fill(255, 255, 255, 180);
+    sheet.ellipse(cloudX + 20, 15, 45, 20);
+
+    // Add a few simple overlapping circles for a fluffy but minimal look
+    sheet.fill(255, 255, 255, 210);
+    sheet.ellipse(cloudX + 15, 13, 25, 15);
+    sheet.ellipse(cloudX + 28, 12, 20, 14);
+
+    // Subtle highlight on top for dimension
+    sheet.fill(255, 255, 255, 240);
+    sheet.ellipse(cloudX + 20, 10, 30, 12);
   }
 
   return sheet;
@@ -213,6 +318,11 @@ class Vehicle {
     this.frames = [0, 1, 2, 1]; // Animation sequence
     this.isDead = false;
     this.trail = [];
+
+    // Blue paper colors for effects
+    this.mainBlue = color(65, 105, 225);      // Royal blue
+    this.darkBlue = color(30, 60, 180);       // Darker shade for shadows
+    this.lightBlue = color(100, 150, 255);    // Lighter shade for highlights
   }
 
     update() {
@@ -228,13 +338,14 @@ class Vehicle {
       this.frameCount += this.animationSpeed;
       this.currentFrame = this.frames[floor(this.frameCount) % this.frames.length];
 
-      // Add trail effect
-      if (frameCount % 3 === 0) {
+      // Add white smoke trail effect
+      if (frameCount % 2 === 0) {
         this.trail.push({
           x: this.x - 10,
           y: this.y,
-          opacity: 255,
-          size: random(3, 6)
+          opacity: 180,
+          size: random(3, 6),
+          expandRate: random(0.01, 0.03)
         });
       }
 
@@ -248,7 +359,8 @@ class Vehicle {
     // Update trail
     for (let i = this.trail.length - 1; i >= 0; i--) {
       this.trail[i].x -= 2 * gameSpeed;
-      this.trail[i].opacity -= 10;
+      this.trail[i].opacity -= 5;
+      this.trail[i].size += this.trail[i].size * this.trail[i].expandRate; // Smoke expands as it dissipates
       if (this.trail[i].opacity <= 0) {
         this.trail.splice(i, 1);
       }
@@ -260,14 +372,14 @@ class Vehicle {
       this.velocity = this.flapStrength;
       sounds.flap.play();
 
-      // Add flap particles
+      // Add white smoke particles
       for (let i = 0; i < 5; i++) {
         particles.push(new Particle(
           this.x - 5,
           this.y + random(-5, 5),
           random(-2, -1),
           random(-1, 1),
-          random(10, 20),
+          random(4, 8),
           color(255, 255, 255, 150)
         ));
       }
@@ -278,10 +390,10 @@ class Vehicle {
     push();
     translate(this.x, this.y);
 
-    // Draw trail
+    // Draw white smoke trail
     for (let t of this.trail) {
-      fill(255, 255, 255, t.opacity);
       noStroke();
+      fill(255, 255, 255, t.opacity);
       ellipse(t.x - this.x, t.y - this.y, t.size);
     }
 
@@ -310,15 +422,15 @@ class Vehicle {
       sounds.hit.play();
       setTimeout(() => sounds.die.play(), 500);
 
-      // Create explosion particles
+      // Create white smoke explosion
       for (let i = 0; i < 20; i++) {
         particles.push(new Particle(
           this.x,
           this.y,
           random(-3, 3),
           random(-3, 3),
-          random(5, 15),
-          color(255, random(150, 255), 0, 255)
+          random(5, 12),
+          color(255, 255, 255, 200)
         ));
       }
 
@@ -326,163 +438,163 @@ class Vehicle {
       flashOpacity = 255;
       shakeAmount = 10;
     }
-    }
+  }
+}
+
+// Pipe class representing obstacles
+class Pipe {
+  constructor() {
+  // Increase base spacing from 150 to 200, and minimum from 100 to 180
+  this.spacing = constrain(200 - (difficultyLevel * 5), 180, 200);
+  this.top = random(height * 0.1, height * 0.6);
+  this.bottom = height - (this.top + this.spacing);
+  this.x = width;
+  this.w = 52;
+  this.speed = 2 * gameSpeed;
+  this.passed = false;
+  this.highlighted = false; // For visual effect when passing through
+}
+
+update() {
+  this.x -= this.speed;
+
+  // Highlight effect when passing through
+  if (!this.passed && this.x < vehicle.x && this.x + this.w > vehicle.x - vehicle.width/2) {
+    this.highlighted = true;
+  } else {
+    this.highlighted = false;
+  }
+}
+
+show() {
+  push();
+  if (this.highlighted) {
+    // Brighter highlight when passing through
+    tint(255, 255, 200);
   }
 
-  // Pipe class representing obstacles
-  class Pipe {
-    constructor() {
-    // Increase base spacing from 150 to 200, and minimum from 100 to 180
-    this.spacing = constrain(200 - (difficultyLevel * 5), 180, 200);
-    this.top = random(height * 0.1, height * 0.6);
-    this.bottom = height - (this.top + this.spacing);
-    this.x = width;
-    this.w = 52;
-    this.speed = 2 * gameSpeed;
-    this.passed = false;
-    this.highlighted = false; // For visual effect when passing through
+  // 3D PIPE DRAWING WITH ENHANCED PERSPECTIVE
+
+  // Draw top obstacle - RED with 3D effect
+  noStroke();
+
+  // Perspective effect - slightly narrower at the top
+  let perspectiveNarrow = 5; // Pixels narrower at the far end
+
+  // Main pipe body with subtle gradient
+  for (let i = 0; i < this.top; i += 5) {
+    // Create gradient from darker to brighter red (bottom to top)
+    let gradientColor = map(i, 0, this.top, 220, 180);
+    fill(gradientColor, 0, 0);
+
+    // Calculate width based on perspective
+    let perspectiveWidth = map(i, 0, this.top, this.w - perspectiveNarrow, this.w);
+    let xOffset = (this.w - perspectiveWidth) / 2;
+
+    rect(this.x + xOffset, i, perspectiveWidth, 5);
   }
 
-  update() {
-    this.x -= this.speed;
+  // Right edge highlight
+  fill(255, 50, 50); // Lighter red for highlight
+  rect(this.x + this.w - 8, 0, 8, this.top);
 
-    // Highlight effect when passing through
-    if (!this.passed && this.x < vehicle.x && this.x + this.w > vehicle.x - vehicle.width/2) {
-      this.highlighted = true;
-    } else {
-      this.highlighted = false;
-    }
+  // Bottom edge
+  fill(180, 0, 0); // Darker red for shadow
+  rect(this.x, this.top - 10, this.w, 10);
+
+  // 3D pipe opening with depth
+  // Outer rim with gradient
+  for (let r = 0; r < 5; r++) {
+    let rimColor = map(r, 0, 5, 200, 150);
+    fill(rimColor, 0, 0);
+    ellipse(this.x + this.w/2, this.top, this.w * map(r, 0, 5, 0.9, 0.8), 20 - r);
   }
 
-  show() {
-    push();
-    if (this.highlighted) {
-      // Brighter highlight when passing through
-      tint(255, 255, 200);
-    }
+  // Inner opening
+  fill(100, 0, 0); // Dark red for pipe interior
+  ellipse(this.x + this.w/2, this.top, this.w * 0.7, 15);
 
-    // 3D PIPE DRAWING WITH ENHANCED PERSPECTIVE
-
-    // Draw top obstacle - RED with 3D effect
-    noStroke();
-
-    // Perspective effect - slightly narrower at the top
-    let perspectiveNarrow = 5; // Pixels narrower at the far end
-
-    // Main pipe body with subtle gradient
-    for (let i = 0; i < this.top; i += 5) {
-      // Create gradient from darker to brighter red (bottom to top)
-      let gradientColor = map(i, 0, this.top, 220, 180);
-      fill(gradientColor, 0, 0);
-
-      // Calculate width based on perspective
-      let perspectiveWidth = map(i, 0, this.top, this.w - perspectiveNarrow, this.w);
-      let xOffset = (this.w - perspectiveWidth) / 2;
-
-      rect(this.x + xOffset, i, perspectiveWidth, 5);
-    }
-
-    // Right edge highlight
-    fill(255, 50, 50); // Lighter red for highlight
-    rect(this.x + this.w - 8, 0, 8, this.top);
-
-    // Bottom edge
-    fill(180, 0, 0); // Darker red for shadow
-    rect(this.x, this.top - 10, this.w, 10);
-
-    // 3D pipe opening with depth
-    // Outer rim with gradient
-    for (let r = 0; r < 5; r++) {
-      let rimColor = map(r, 0, 5, 200, 150);
-      fill(rimColor, 0, 0);
-      ellipse(this.x + this.w/2, this.top, this.w * map(r, 0, 5, 0.9, 0.8), 20 - r);
-    }
-
-    // Inner opening
-    fill(100, 0, 0); // Dark red for pipe interior
-    ellipse(this.x + this.w/2, this.top, this.w * 0.7, 15);
-
-    // Deep interior with gradient
-    for (let d = 0; d < 3; d++) {
-      let depthColor = map(d, 0, 3, 80, 30);
-      fill(depthColor, 0, 0);
-      ellipse(this.x + this.w/2, this.top, this.w * map(d, 0, 3, 0.6, 0.4), 10 - d*2);
-    }
-
-    // Draw bottom obstacle - BLUE with 3D effect
-    noStroke();
-
-    // Main pipe body with subtle gradient
-    for (let i = 0; i < this.bottom; i += 5) {
-      // Create gradient from darker to brighter blue (top to bottom)
-      let gradientColor = map(i, 0, this.bottom, 0, 50);
-      fill(0, 0, 220 - gradientColor);
-
-      // Calculate width based on perspective
-      let perspectiveWidth = map(i, 0, this.bottom, this.w, this.w - perspectiveNarrow);
-      let xOffset = (this.w - perspectiveWidth) / 2;
-
-      rect(this.x + xOffset, height - this.bottom + i, perspectiveWidth, 5);
-    }
-
-    // Right edge highlight
-    fill(50, 50, 255); // Lighter blue for highlight
-    rect(this.x + this.w - 8, height - this.bottom, 8, this.bottom);
-
-    // Top edge
-    fill(0, 0, 180); // Darker blue for shadow
-    rect(this.x, height - this.bottom, this.w, 10);
-
-    // 3D pipe opening with depth
-    // Outer rim with gradient
-    for (let r = 0; r < 5; r++) {
-      let rimColor = map(r, 0, 5, 0, 50);
-      fill(0, 0, 180 - rimColor);
-      ellipse(this.x + this.w/2, height - this.bottom, this.w * map(r, 0, 5, 0.9, 0.8), 20 - r);
-    }
-
-    // Inner opening
-    fill(0, 0, 100); // Dark blue for pipe interior
-    ellipse(this.x + this.w/2, height - this.bottom, this.w * 0.7, 15);
-
-    // Deep interior with gradient
-    for (let d = 0; d < 3; d++) {
-      let depthColor = map(d, 0, 3, 80, 20);
-      fill(0, 0, depthColor);
-      ellipse(this.x + this.w/2, height - this.bottom, this.w * map(d, 0, 3, 0.6, 0.4), 10 - d*2);
-    }
-
-    pop();
+  // Deep interior with gradient
+  for (let d = 0; d < 3; d++) {
+    let depthColor = map(d, 0, 3, 80, 30);
+    fill(depthColor, 0, 0);
+    ellipse(this.x + this.w/2, this.top, this.w * map(d, 0, 3, 0.6, 0.4), 10 - d*2);
   }
 
-    offscreen() {
-      return this.x < -this.w;
-    }
+  // Draw bottom obstacle - BLUE with 3D effect
+  noStroke();
 
-    hits(vehicle) {
-    // More forgiving hitbox for better gameplay
-    // First, check if the plane is horizontally within the pipe's collision area
-    // We'll use the center point of the plane for horizontal detection
-    let planeCenter = vehicle.x;
+  // Main pipe body with subtle gradient
+  for (let i = 0; i < this.bottom; i += 5) {
+    // Create gradient from darker to brighter blue (top to bottom)
+    let gradientColor = map(i, 0, this.bottom, 0, 50);
+    fill(0, 0, 220 - gradientColor);
 
-    // Only check collision if the plane's center is between the pipe's left and right edges
-    let horizontalCollision = planeCenter > this.x && planeCenter < this.x + this.w;
+    // Calculate width based on perspective
+    let perspectiveWidth = map(i, 0, this.bottom, this.w, this.w - perspectiveNarrow);
+    let xOffset = (this.w - perspectiveWidth) / 2;
 
-    if (!horizontalCollision) {
-      return false; // No collision if not horizontally aligned
-    }
-
-    // If we're horizontally aligned, check vertical collision
-    // Use a smaller hitbox for more forgiving gameplay
-    let planeTop = vehicle.y - vehicle.height/5; // Even more forgiving (1/5 instead of 1/4)
-    let planeBottom = vehicle.y + vehicle.height/5;
-
-    // Check if the plane is in the gap
-    let inGap = planeTop > this.top && planeBottom < height - this.bottom;
-
-    // Return true for collision if NOT in the gap
-    return !inGap;
+    rect(this.x + xOffset, height - this.bottom + i, perspectiveWidth, 5);
   }
+
+  // Right edge highlight
+  fill(50, 50, 255); // Lighter blue for highlight
+  rect(this.x + this.w - 8, height - this.bottom, 8, this.bottom);
+
+  // Top edge
+  fill(0, 0, 180); // Darker blue for shadow
+  rect(this.x, height - this.bottom, this.w, 10);
+
+  // 3D pipe opening with depth
+  // Outer rim with gradient
+  for (let r = 0; r < 5; r++) {
+    let rimColor = map(r, 0, 5, 0, 50);
+    fill(0, 0, 180 - rimColor);
+    ellipse(this.x + this.w/2, height - this.bottom, this.w * map(r, 0, 5, 0.9, 0.8), 20 - r);
+  }
+
+  // Inner opening
+  fill(0, 0, 100); // Dark blue for pipe interior
+  ellipse(this.x + this.w/2, height - this.bottom, this.w * 0.7, 15);
+
+  // Deep interior with gradient
+  for (let d = 0; d < 3; d++) {
+    let depthColor = map(d, 0, 3, 80, 20);
+    fill(0, 0, depthColor);
+    ellipse(this.x + this.w/2, height - this.bottom, this.w * map(d, 0, 3, 0.6, 0.4), 10 - d*2);
+  }
+
+  pop();
+}
+
+offscreen() {
+  return this.x < -this.w;
+}
+
+hits(vehicle) {
+  // More forgiving hitbox for better gameplay
+  // First, check if the plane is horizontally within the pipe's collision area
+  // We'll use the center point of the plane for horizontal detection
+  let planeCenter = vehicle.x;
+
+  // Only check collision if the plane's center is between the pipe's left and right edges
+  let horizontalCollision = planeCenter > this.x && planeCenter < this.x + this.w;
+
+  if (!horizontalCollision) {
+    return false; // No collision if not horizontally aligned
+  }
+
+  // If we're horizontally aligned, check vertical collision
+  // Use a smaller hitbox for more forgiving gameplay
+  let planeTop = vehicle.y - vehicle.height/5; // Even more forgiving (1/5 instead of 1/4)
+  let planeBottom = vehicle.y + vehicle.height/5;
+
+  // Check if the plane is in the gap
+  let inGap = planeTop > this.top && planeBottom < height - this.bottom;
+
+  // Return true for collision if NOT in the gap
+  return !inGap;
+}
 }
 
 // Particle effect class
@@ -495,8 +607,11 @@ class Particle {
     this.size = size;
     this.color = color;
     this.alpha = 255;
-    this.gravity = 0.1;
+    this.gravity = 0.05; // Reduced gravity for smoke
     this.drag = 0.98;
+    this.rotation = random(TWO_PI);
+    this.rotationSpeed = random(-0.02, 0.02);
+    this.expandRate = random(0.01, 0.03); // Smoke expands as it dissipates
   }
 
   update() {
@@ -506,14 +621,24 @@ class Particle {
     this.vx *= this.drag;
     this.vy *= this.drag;
     this.alpha -= 5;
-    this.size *= 0.97;
+    this.size += this.size * this.expandRate; // Smoke expands
+    this.rotation += this.rotationSpeed;
   }
 
   show() {
     if (this.alpha > 0) {
+      push();
+      translate(this.x, this.y);
+      rotate(this.rotation);
+
+      // Draw smoke particle
       noStroke();
       fill(red(this.color), green(this.color), blue(this.color), this.alpha);
-      ellipse(this.x, this.y, this.size);
+
+      // Soft-edged circle for smoke
+      ellipse(0, 0, this.size);
+
+      pop();
     }
   }
 
@@ -528,8 +653,16 @@ class Cloud {
     this.x = width + random(50, 200);
     this.y = random(50, height/2);
     this.speed = random(0.2, 0.5) * parallaxSpeed;
-    this.size = random(0.5, 1.5);
-    this.type = floor(random(3)); // Different cloud types
+    this.size = random(0.8, 1.3);
+    this.opacity = random(180, 220);
+    this.width = random(60, 100);
+    this.height = random(25, 40);
+
+    // Randomize cloud shape slightly
+    this.offsetX1 = random(-5, 5);
+    this.offsetX2 = random(-5, 5);
+    this.offsetY1 = random(-3, 3);
+    this.offsetY2 = random(-3, 3);
   }
 
   update() {
@@ -541,18 +674,21 @@ class Cloud {
     translate(this.x, this.y);
     scale(this.size);
 
-    // Draw cloud from spritesheet
-    let cloudWidth = 60;
-    let cloudHeight = 30;
-    let spriteX = 104 + (this.type * cloudWidth);
+    // Draw a soft, simple cloud directly
+    noStroke();
 
-    image(
-      spriteSheet,
-      0, 0,
-      cloudWidth, cloudHeight,
-      spriteX, 0,
-      cloudWidth, cloudHeight
-    );
+    // Base cloud - soft white with transparency
+    fill(255, 255, 255, this.opacity);
+    ellipse(0, 0, this.width, this.height);
+
+    // Add a few simple overlapping circles for a fluffy but minimal look
+    fill(255, 255, 255, min(this.opacity + 20, 255));
+    ellipse(-this.width/4 + this.offsetX1, -this.height/4 + this.offsetY1, this.width/2, this.height/1.5);
+    ellipse(this.width/4 + this.offsetX2, -this.height/5 + this.offsetY2, this.width/2.5, this.height/1.8);
+
+    // Subtle highlight on top for dimension
+    fill(255, 255, 255, min(this.opacity + 40, 255));
+    ellipse(0, -this.height/3, this.width/1.5, this.height/2);
 
     pop();
   }
