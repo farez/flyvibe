@@ -1580,7 +1580,6 @@ function keyPressed() {
 function startGame() {
   resetGame();
   gameState = 'playing';
-  runwayMode = true; // Start on runway
 
   // Create start particles
   for (let i = 0; i < 20; i++) {
@@ -1611,6 +1610,12 @@ function resetGame() {
   comboMultiplier = 1;
   perfectPass = false;
   messageAlpha = 0;
+
+  // Always start from runway mode when resetting
+  runwayMode = true;
+
+  // Reset runway position
+  runwayX = 0;
 }
 
 // Watch ad to continue
