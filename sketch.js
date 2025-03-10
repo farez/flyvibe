@@ -39,13 +39,29 @@ let pipeInterval = 100;
 let difficultyLevel = 1;
 let gameSpeed = 1;
 let parallaxSpeed = 0.5;
-let isNight = false;
 let flashOpacity = 0;
 let shakeAmount = 0;
 let scoreAnimation = { value: 0, target: 0, speed: 0.1 };
 let buttonHover = { restart: false, continue: false };
 let runwayMode = true; // Flag for runway start sequence
 let runwayX = 0; // Runway scroll position
+
+// Day-night cycle variables
+let dayTime = 0.2; // Start with a fixed time (afternoon) to avoid potential issues
+let dayLength = 18000; // 5 minutes in frames (60fps * 60sec * 5min = 18000)
+let skyColors = {
+  noon: [135, 206, 235],      // Bright blue
+  afternoon: [120, 190, 230],  // Slightly less bright blue
+  lateAfternoon: [110, 170, 225], // Deeper blue
+  sunset: [255, 130, 100],     // Orange-red
+  dusk: [70, 80, 120],         // Deep blue-purple
+  night: [20, 24, 82],         // Dark blue
+  midnight: [10, 10, 30],      // Very dark blue
+  earlyMorning: [70, 80, 120], // Deep blue-purple (like dusk)
+  dawn: [255, 130, 100],       // Orange-red (like sunset)
+  morning: [110, 170, 225],    // Deeper blue (like late afternoon)
+  midMorning: [120, 190, 230]  // Slightly less bright blue (like afternoon)
+};
 
 // Viral features
 let playerName = "Player";
@@ -831,7 +847,7 @@ class Cloud {
     this.y = random(50, height/2);
     this.speed = random(0.2, 0.5) * parallaxSpeed;
     this.size = random(0.8, 1.3);
-    this.opacity = random(180, 220);
+    this.baseOpacity = random(180, 220);
     this.width = random(60, 100);
     this.height = random(25, 40);
 
@@ -840,6 +856,9 @@ class Cloud {
     this.offsetX2 = random(-5, 5);
     this.offsetY1 = random(-3, 3);
     this.offsetY2 = random(-3, 3);
+
+    // For tailwind mode - elongation factor
+    this.elongation = random(1.2, 2.0);
   }
 
   update() {
@@ -847,6 +866,12 @@ class Cloud {
   }
 
   show() {
+    // Calculate time-of-day visibility factor
+    let timeVisibility = this.getTimeVisibility();
+
+    // If clouds are completely invisible at this time, don't render them
+    if (timeVisibility <= 0) return;
+
     push();
     translate(this.x, this.y);
     scale(this.size);
@@ -854,20 +879,63 @@ class Cloud {
     // Draw a soft, simple cloud directly
     noStroke();
 
-    // Base cloud - soft white with transparency
-    fill(255, 255, 255, this.opacity);
-    ellipse(0, 0, this.width, this.height);
+    // Adjust cloud appearance based on game mode
+    let opacity = this.baseOpacity;
+    let cloudColor = [255, 255, 255]; // Default white
+    let widthMultiplier = 1;
+    let heightMultiplier = 1;
+
+    if (gameMode === "normal") {
+      // Normal mode - slightly reduced opacity (80% of base)
+      opacity = this.baseOpacity * 0.8;
+    } else if (gameMode === "tailwind") {
+      // Tailwind mode - wispier clouds (elongated, more transparent)
+      widthMultiplier = this.elongation;
+      heightMultiplier = 0.7;
+      opacity = this.baseOpacity * 0.7;
+    } else if (gameMode === "stormy") {
+      // Stormy mode - darker clouds
+      cloudColor = [220, 220, 220]; // Slightly darker gray
+      opacity = this.baseOpacity * 0.9;
+    }
+
+    // Apply time-of-day visibility
+    opacity *= timeVisibility;
+
+    // Base cloud with adjusted appearance
+    fill(cloudColor[0], cloudColor[1], cloudColor[2], opacity);
+    ellipse(0, 0, this.width * widthMultiplier, this.height * heightMultiplier);
 
     // Add a few simple overlapping circles for a fluffy but minimal look
-    fill(255, 255, 255, min(this.opacity + 20, 255));
-    ellipse(-this.width/4 + this.offsetX1, -this.height/4 + this.offsetY1, this.width/2, this.height/1.5);
-    ellipse(this.width/4 + this.offsetX2, -this.height/5 + this.offsetY2, this.width/2.5, this.height/1.8);
+    fill(cloudColor[0], cloudColor[1], cloudColor[2], min(opacity + 20, 255));
+    ellipse(-this.width/4 + this.offsetX1, -this.height/4 + this.offsetY1,
+            this.width/2 * widthMultiplier, this.height/1.5 * heightMultiplier);
+    ellipse(this.width/4 + this.offsetX2, -this.height/5 + this.offsetY2,
+            this.width/2.5 * widthMultiplier, this.height/1.8 * heightMultiplier);
 
     // Subtle highlight on top for dimension
-    fill(255, 255, 255, min(this.opacity + 40, 255));
-    ellipse(0, -this.height/3, this.width/1.5, this.height/2);
+    fill(cloudColor[0], cloudColor[1], cloudColor[2], min(opacity + 40, 255));
+    ellipse(0, -this.height/3, this.width/1.5 * widthMultiplier, this.height/2 * heightMultiplier);
 
     pop();
+  }
+
+  // Calculate cloud visibility based on time of day (0-1)
+  getTimeVisibility() {
+    // Dusk starts at 0.35, night is 0.4-0.6, dawn starts at 0.7
+    if (dayTime >= 0.35 && dayTime < 0.4) {
+      // Dusk - fade out (0.35-0.4)
+      return map(dayTime, 0.35, 0.4, 1, 0);
+    } else if (dayTime >= 0.4 && dayTime < 0.6) {
+      // Night - invisible
+      return 0;
+    } else if (dayTime >= 0.6 && dayTime < 0.7) {
+      // Dawn - fade in (0.6-0.7)
+      return map(dayTime, 0.6, 0.7, 0, 1);
+    } else {
+      // Day - fully visible
+      return 1;
+    }
   }
 
   offscreen() {
@@ -877,11 +945,12 @@ class Cloud {
 
 // Background layer for parallax effect
 class BackgroundLayer {
-  constructor(y, height, speed, color) {
+  constructor(y, height, speed, baseColor) {
     this.y = y;
     this.height = height;
     this.speed = speed;
-    this.color = color;
+    this.baseColor = baseColor; // Store the original color
+    this.color = baseColor;     // This will be adjusted based on time of day
     this.elements = [];
 
     // Create initial elements
@@ -905,6 +974,49 @@ class BackgroundLayer {
         this.elements.push(this.elements.splice(i, 1)[0]);
       }
     }
+
+    // Update color based on time of day
+    this.updateLighting();
+  }
+
+  // Adjust color based on time of day
+  updateLighting() {
+    let r = red(this.baseColor);
+    let g = green(this.baseColor);
+    let b = blue(this.baseColor);
+    let lightFactor = 1.0;
+
+    // Adjust lighting based on time of day
+    if (dayTime < 0.2 || dayTime > 0.8) {
+      // Daytime - normal to slightly brighter
+      lightFactor = map(
+        min(abs(dayTime - 0), abs(dayTime - 1)),
+        0, 0.2,
+        1.1, 1.0 // Brightest at noon (0.0/1.0)
+      );
+    } else if (dayTime < 0.3) {
+      // Late afternoon to sunset
+      lightFactor = map(dayTime, 0.2, 0.3, 1.0, 0.9);
+    } else if (dayTime < 0.4) {
+      // Sunset to dusk to night
+      lightFactor = map(dayTime, 0.3, 0.4, 0.9, 0.6);
+    } else if (dayTime < 0.6) {
+      // Night to midnight and back
+      lightFactor = 0.6; // Darkest at night
+    } else if (dayTime < 0.7) {
+      // Early morning to dawn
+      lightFactor = map(dayTime, 0.6, 0.7, 0.6, 0.9);
+    } else if (dayTime < 0.8) {
+      // Dawn to morning
+      lightFactor = map(dayTime, 0.7, 0.8, 0.9, 1.0);
+    }
+
+    // Apply lighting factor
+    this.color = color(
+      constrain(r * lightFactor, 0, 255),
+      constrain(g * lightFactor, 0, 255),
+      constrain(b * lightFactor, 0, 255)
+    );
   }
 
   show() {
@@ -1062,14 +1174,38 @@ function useFont() {
     shakeAmount *= 0.9;
   }
 
-  // Draw sky background (day/night cycle)
+  // Update day-night cycle when playing
+  if (gameState === 'playing') {
+    dayTime = (dayTime + (1 / dayLength)) % 1;
+  }
+
+  // Draw sky background with gradual day-night cycle
   let skyColor;
-  if (isNight) {
-    skyColor = color(20, 24, 82);
-  } else {
-    skyColor = color(135, 206, 235);
+  try {
+    skyColor = getDaytimeSkyColor();
+  } catch (e) {
+    console.error("Error getting sky color:", e);
+    skyColor = color(135, 206, 235); // Default to a safe blue color
   }
   background(skyColor);
+
+  // Add stars at night
+  try {
+    if (dayTime > 0.4 && dayTime < 0.6) {
+      drawStars(map(dayTime, 0.4, 0.5, 0, 1)); // Fade in
+    } else if (dayTime >= 0.6 && dayTime < 0.9) {
+      drawStars(map(dayTime, 0.6, 0.9, 1, 0)); // Fade out
+    }
+  } catch (e) {
+    console.error("Error drawing stars:", e);
+  }
+
+  // Add sun or moon
+  try {
+    drawSunMoon();
+  } catch (e) {
+    console.error("Error drawing sun/moon:", e);
+  }
 
   // Update and draw clouds
   for (let i = clouds.length - 1; i >= 0; i--) {
@@ -1081,7 +1217,41 @@ function useFont() {
   }
 
   // Spawn new clouds
-  if (frameCount % 100 === 0 || clouds.length < 3) {
+  if (frameCount % 100 === 0) {
+    // Check if it's nighttime (no clouds should spawn)
+    let isNighttime = dayTime >= 0.4 && dayTime < 0.6;
+
+    if (!isNighttime) {
+      // Adjust cloud frequency based on game mode
+      let shouldSpawnCloud = false;
+
+      if (gameMode === "normal") {
+        // Reduce clouds by 80% in normal mode
+        shouldSpawnCloud = random() < 0.2; // Only 20% chance to spawn
+      } else {
+        // Regular cloud spawning for other modes
+        shouldSpawnCloud = true;
+      }
+
+      // Adjust spawn rate during dusk and dawn (transitional periods)
+      if (shouldSpawnCloud) {
+        if (dayTime >= 0.35 && dayTime < 0.4) {
+          // Dusk - decreasing probability
+          shouldSpawnCloud = random() < map(dayTime, 0.35, 0.4, 1, 0);
+        } else if (dayTime >= 0.6 && dayTime < 0.7) {
+          // Dawn - increasing probability
+          shouldSpawnCloud = random() < map(dayTime, 0.6, 0.7, 0, 1);
+        }
+      }
+
+      if (shouldSpawnCloud) {
+        clouds.push(new Cloud());
+      }
+    }
+  }
+
+  // Ensure minimum number of clouds during daytime
+  if (clouds.length < 1 && !(dayTime >= 0.4 && dayTime < 0.6)) {
     clouds.push(new Cloud());
   }
 
@@ -1334,10 +1504,7 @@ function updateGameplay() {
         // Gradually increase game speed (capped at 1.3)
         gameSpeed = min(1.3, 1 + (score / 150));
 
-        // Day/night transition
-        if (score % 20 === 0) {
-          isNight = !isNight;
-        }
+        // Day/night transition is now handled by the continuous cycle
       }
     }
 
@@ -1750,6 +1917,9 @@ function resetGame() {
   perfectPass = false;
   messageAlpha = 0;
 
+  // Set day-night cycle to a safe time of day (afternoon)
+  dayTime = 0.2;
+
   // Always start from runway mode when resetting
   runwayMode = true;
 
@@ -1824,3 +1994,190 @@ function challengeFriend() {
 
   sounds.button.play();
   }
+
+// Get sky color based on time of day
+function getDaytimeSkyColor() {
+  // Safety check - ensure dayTime is a valid number between 0 and 1
+  if (isNaN(dayTime) || dayTime < 0 || dayTime > 1) {
+    console.log("Invalid dayTime value:", dayTime);
+    dayTime = 0.2; // Reset to a safe value (afternoon)
+  }
+
+  // Map dayTime (0-1) to different times of day
+  if (dayTime < 0.1) { // Noon to afternoon (0.0-0.1)
+    return lerpColor(
+      color(skyColors.noon[0], skyColors.noon[1], skyColors.noon[2]),
+      color(skyColors.afternoon[0], skyColors.afternoon[1], skyColors.afternoon[2]),
+      map(dayTime, 0, 0.1, 0, 1)
+    );
+  } else if (dayTime < 0.2) { // Afternoon to late afternoon (0.1-0.2)
+    return lerpColor(
+      color(skyColors.afternoon[0], skyColors.afternoon[1], skyColors.afternoon[2]),
+      color(skyColors.lateAfternoon[0], skyColors.lateAfternoon[1], skyColors.lateAfternoon[2]),
+      map(dayTime, 0.1, 0.2, 0, 1)
+    );
+  } else if (dayTime < 0.3) { // Late afternoon to sunset (0.2-0.3)
+    return lerpColor(
+      color(skyColors.lateAfternoon[0], skyColors.lateAfternoon[1], skyColors.lateAfternoon[2]),
+      color(skyColors.sunset[0], skyColors.sunset[1], skyColors.sunset[2]),
+      map(dayTime, 0.2, 0.3, 0, 1)
+    );
+  } else if (dayTime < 0.35) { // Sunset to dusk (0.3-0.35)
+    return lerpColor(
+      color(skyColors.sunset[0], skyColors.sunset[1], skyColors.sunset[2]),
+      color(skyColors.dusk[0], skyColors.dusk[1], skyColors.dusk[2]),
+      map(dayTime, 0.3, 0.35, 0, 1)
+    );
+  } else if (dayTime < 0.4) { // Dusk to night (0.35-0.4)
+    return lerpColor(
+      color(skyColors.dusk[0], skyColors.dusk[1], skyColors.dusk[2]),
+      color(skyColors.night[0], skyColors.night[1], skyColors.night[2]),
+      map(dayTime, 0.35, 0.4, 0, 1)
+    );
+  } else if (dayTime < 0.5) { // Night to midnight (0.4-0.5)
+    return lerpColor(
+      color(skyColors.night[0], skyColors.night[1], skyColors.night[2]),
+      color(skyColors.midnight[0], skyColors.midnight[1], skyColors.midnight[2]),
+      map(dayTime, 0.4, 0.5, 0, 1)
+    );
+  } else if (dayTime < 0.6) { // Midnight to early morning (0.5-0.6)
+    return lerpColor(
+      color(skyColors.midnight[0], skyColors.midnight[1], skyColors.midnight[2]),
+      color(skyColors.earlyMorning[0], skyColors.earlyMorning[1], skyColors.earlyMorning[2]),
+      map(dayTime, 0.5, 0.6, 0, 1)
+    );
+  } else if (dayTime < 0.7) { // Early morning to dawn (0.6-0.7)
+    return lerpColor(
+      color(skyColors.earlyMorning[0], skyColors.earlyMorning[1], skyColors.earlyMorning[2]),
+      color(skyColors.dawn[0], skyColors.dawn[1], skyColors.dawn[2]),
+      map(dayTime, 0.6, 0.7, 0, 1)
+    );
+  } else if (dayTime < 0.8) { // Dawn to morning (0.7-0.8)
+    return lerpColor(
+      color(skyColors.dawn[0], skyColors.dawn[1], skyColors.dawn[2]),
+      color(skyColors.morning[0], skyColors.morning[1], skyColors.morning[2]),
+      map(dayTime, 0.7, 0.8, 0, 1)
+    );
+  } else if (dayTime < 0.9) { // Morning to mid-morning (0.8-0.9)
+    return lerpColor(
+      color(skyColors.morning[0], skyColors.morning[1], skyColors.morning[2]),
+      color(skyColors.midMorning[0], skyColors.midMorning[1], skyColors.midMorning[2]),
+      map(dayTime, 0.8, 0.9, 0, 1)
+    );
+  } else { // Mid-morning to noon (0.9-1.0)
+    return lerpColor(
+      color(skyColors.midMorning[0], skyColors.midMorning[1], skyColors.midMorning[2]),
+      color(skyColors.noon[0], skyColors.noon[1], skyColors.noon[2]),
+      map(dayTime, 0.9, 1.0, 0, 1)
+    );
+  }
+}
+
+// Draw stars with opacity based on time of day
+function drawStars(opacity) {
+  // Safety checks
+  if (isNaN(opacity) || opacity < 0) {
+    opacity = 0;
+  } else if (opacity > 1) {
+    opacity = 1;
+  }
+
+  // Only draw stars if they're at least somewhat visible
+  if (opacity <= 0) return;
+
+  // Use a consistent seed for the stars so they don't change position
+  randomSeed(42);
+
+  // Draw stars with varying brightness
+  fill(255, 255, 255, 255 * opacity);
+  noStroke();
+
+  for (let i = 0; i < 100; i++) {
+    let starX = random(width);
+    let starY = random(height/2); // Stars only in the upper half of the screen
+    let starSize = random(1, 3);
+
+    // Twinkle effect
+    let twinkle = sin(frameCount * 0.05 + i * 0.4) * 0.3 + 0.7;
+
+    ellipse(starX, starY, starSize * twinkle, starSize * twinkle);
+  }
+
+  // Reset the random seed
+  randomSeed();
+}
+
+// Draw sun or moon based on time of day
+function drawSunMoon() {
+  // Safety check - ensure dayTime is valid
+  if (isNaN(dayTime) || dayTime < 0 || dayTime > 1) {
+    return; // Skip drawing if dayTime is invalid
+  }
+
+  try {
+    let celestialX, celestialY, celestialSize, celestialColor, glowOpacity;
+
+    // Calculate position based on time of day
+    // Full arc from left horizon to right horizon
+    let angle = map(dayTime, 0, 1, -PI, PI);
+    let radius = height * 0.8;
+
+    celestialX = width/2 + cos(angle) * radius;
+    celestialY = height + sin(angle) * radius;
+
+    // Determine if it's sun or moon and set appropriate size and color
+    if (dayTime < 0.3 || dayTime > 0.7) {
+      // Sun
+      celestialSize = 60;
+
+      // Sun color changes based on time of day
+      if (dayTime < 0.3) { // Afternoon to sunset
+        celestialColor = lerpColor(
+          color(255, 255, 200), // Bright yellow
+          color(255, 150, 50),  // Orange
+          map(dayTime, 0, 0.3, 0, 1)
+        );
+      } else { // Dawn to noon
+        celestialColor = lerpColor(
+          color(255, 150, 50),  // Orange
+          color(255, 255, 200), // Bright yellow
+          map(dayTime, 0.7, 1, 0, 1)
+        );
+      }
+
+      // Sun glow
+      glowOpacity = 0.2;
+      if (dayTime > 0.2 && dayTime < 0.3) { // Sunset glow
+        glowOpacity = map(dayTime, 0.2, 0.3, 0.2, 0.5);
+      } else if (dayTime > 0.7 && dayTime < 0.8) { // Dawn glow
+        glowOpacity = map(dayTime, 0.7, 0.8, 0.5, 0.2);
+      }
+
+      // Draw sun glow
+      for (let i = 5; i > 0; i--) {
+        fill(red(celestialColor), green(celestialColor), blue(celestialColor), 255 * glowOpacity * (1 - i/5));
+        ellipse(celestialX, celestialY, celestialSize * (1 + i/2));
+      }
+
+      // Draw sun
+      fill(celestialColor);
+      ellipse(celestialX, celestialY, celestialSize);
+
+    } else {
+      // Moon
+      celestialSize = 40;
+
+      // Draw moon
+      fill(240, 240, 220);
+      ellipse(celestialX, celestialY, celestialSize);
+
+      // Draw moon craters
+      fill(220, 220, 200);
+      ellipse(celestialX - 10, celestialY - 5, 10);
+      ellipse(celestialX + 8, celestialY + 10, 8);
+      ellipse(celestialX + 5, celestialY - 8, 6);
+    }
+  } catch (e) {
+    console.error("Error drawing sun or moon:", e);
+  }
+}
