@@ -1138,13 +1138,8 @@ class Button {
     textSize(this.height * 0.5);
     text(this.text, 0, this.pressEffect);
 
-    // Add a subtle glow effect when hovering
-    if (this.hover) {
-      noFill();
-      stroke(255, 255, 200, 100);
-      strokeWeight(2);
-      rect(-this.width/2 - 2, -this.height/2 - 2 + this.pressEffect, this.width + 4, this.height + 4, 12);
-    }
+    // Remove the glow effect when hovering
+    // No longer adding the extra outline
 
     pop();
   }
@@ -1180,10 +1175,10 @@ let continueButton;
   shareButton = new Button(width/2 - 95, height/2 + 190, 180, 50, "SHARE ON X", shareScore);
   challengeButton = new Button(width/2 + 95, height/2 + 190, 180, 50, "CHALLENGE", challengeFriend);
 
-  // Create mode selection buttons
-  normalModeButton = new Button(width/2 - 130, height/2 + 100, 120, 40, "NORMAL", () => selectGameMode("normal"));
-  tailwindModeButton = new Button(width/2, height/2 + 100, 120, 40, "TAILWIND", () => selectGameMode("tailwind"));
-  stormyModeButton = new Button(width/2 + 130, height/2 + 100, 120, 40, "STORMY", () => selectGameMode("stormy"));
+  // Create mode selection buttons - moved lower to avoid covering the SELECT GAME MODE text
+  normalModeButton = new Button(width/2 - 130, height/2, 120, 40, "NORMAL", () => selectGameMode("normal"));
+  tailwindModeButton = new Button(width/2, height/2, 120, 40, "TAILWIND", () => selectGameMode("tailwind"));
+  stormyModeButton = new Button(width/2 + 130, height/2, 120, 40, "STORMY", () => selectGameMode("stormy"));
 
   // Create background layers for parallax effect
   let skyColor = color(135, 206, 235);
@@ -1367,17 +1362,12 @@ function drawStartScreen() {
   fill(255);
   text("", width/2, titleY + 30);
 
-  // Instructions
-  textSize(24);
-  text("Click or Press Space to Start", width/2, height/2 + 20);
-
-  textSize(16);
-  text("Control with Mouse or Space Bar", width/2, height/2 + 50);
-
-  // Game mode selection - make it more prominent
+  // Game mode selection - now directly after the title - NO ANIMATION
   textSize(24);
   fill(255, 255, 0);
-  text("SELECT GAME MODE:", width/2, height/2 + 80);
+  noStroke(); // Ensure no outline on the text
+  // Fixed position for SELECT GAME MODE text, no animation
+  text("SELECT GAME MODE:", width/2, height/2 - 50);
 
   // Update and show mode buttons
   normalModeButton.update();
@@ -1389,38 +1379,49 @@ function drawStartScreen() {
   tailwindModeButton.show();
   stormyModeButton.show();
 
-  // Highlight selected mode with a more visible outline
+  // Only outline the selected mode button
   strokeWeight(4);
   noFill();
 
+  // Only draw outline for the selected mode - updated positions
   switch(gameMode) {
     case "normal":
       stroke(100, 255, 100);
-      rect(width/2 - 130 - 60, height/2 + 100 - 20, 120, 40, 10);
+      rect(width/2 - 130 - 60, height/2 - 20, 120, 40, 10);
       break;
     case "tailwind":
       stroke(255, 200, 0);
-      rect(width/2 - 60, height/2 + 100 - 20, 120, 40, 10);
+      rect(width/2 - 60, height/2 - 20, 120, 40, 10);
       break;
     case "stormy":
       stroke(255, 50, 50);
-      rect(width/2 + 130 - 60, height/2 + 100 - 20, 120, 40, 10);
+      rect(width/2 + 130 - 60, height/2 - 20, 120, 40, 10);
       break;
   }
 
-  // Add mode descriptions
+  // Add mode descriptions - no outlines - updated positions
+  noStroke();
   textSize(14);
   fill(255);
   textAlign(CENTER);
 
-  text("Standard", width/2 - 130, height/2 + 130);
-  text("1× Points", width/2 - 130, height/2 + 145);
+  text("Standard", width/2 - 130, height/2 + 30);
+  text("1× Points", width/2 - 130, height/2 + 45);
 
-  text("Wind Boost", width/2, height/2 + 130);
-  text("2× Points", width/2, height/2 + 145);
+  text("Wind Boost", width/2, height/2 + 30);
+  text("2× Points", width/2, height/2 + 45);
 
-  text("Turbulence", width/2 + 130, height/2 + 130);
-  text("5× Points", width/2 + 130, height/2 + 145);
+  text("Turbulence", width/2 + 130, height/2 + 30);
+  text("5× Points", width/2 + 130, height/2 + 45);
+
+  // Instructions - moved to the bottom - no outlines
+  noStroke();
+  textSize(24);
+  fill(255);
+  text("Click or Press Space to Start", width/2, height/2 + 180);
+
+  textSize(16);
+  text("Control with Mouse or Space Bar", width/2, height/2 + 210);
 }
 
 // Update game during gameplay
