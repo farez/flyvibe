@@ -1,0 +1,13 @@
+---
+description: Using p5js
+globs: 
+alwaysApply: false
+---
+# Your rule content
+
+- Use features available in p5js as much as possible instead of creating 
+your own.
+- Simplicity of gameplay over complexity.
+- Always think like an entrepreneur and consider virality and ways to make 
+money from the game.
+- When a file becomes too long, split it into smaller files. When a function becomes too long, split it into smaller functions.

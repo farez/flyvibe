@@ -1,0 +1,10 @@
+---
+description: Update the achitecture.md file if required
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- Whenever there is a change to the architecture of the codebase, update 
+the architecture.md file.
