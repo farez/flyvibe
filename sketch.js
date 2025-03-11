@@ -1405,14 +1405,14 @@ function drawStartScreen() {
   fill(255);
   textAlign(CENTER);
 
-  text("Standard", width/2 - 130, height/2 + 30);
-  text("1× Points", width/2 - 130, height/2 + 45);
+  text("Standard", width/2 - 130, height/2 + 40);
+  text("1× Points", width/2 - 130, height/2 + 55);
 
-  text("Wind Boost", width/2, height/2 + 30);
-  text("2× Points", width/2, height/2 + 45);
+  text("Wind Boost", width/2, height/2 + 40);
+  text("2× Points", width/2, height/2 + 55);
 
-  text("Turbulence", width/2 + 130, height/2 + 30);
-  text("5× Points", width/2 + 130, height/2 + 45);
+  text("Turbulence", width/2 + 130, height/2 + 40);
+  text("5× Points", width/2 + 130, height/2 + 55);
 
   // Instructions - moved to the bottom - no outlines
   noStroke();
