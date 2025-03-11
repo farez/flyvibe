@@ -35,7 +35,7 @@ let gameState = 'start';
 let adTimer = 0;
 let adDuration = 5000;
 let framesSinceLastPipe = 0;
-let pipeInterval = 100;
+let pipeInterval = 200; // Doubled from 100 to 200
 let difficultyLevel = 1;
 let gameSpeed = 1;
 let parallaxSpeed = 0.5;
@@ -319,6 +319,19 @@ class Vehicle {
     this.isDead = false;
     this.trail = [];
 
+    // Bird-like flight physics
+    this.wingEnergy = 0;           // Energy from wing flap
+    this.wingDecay = 0.97;        // Much slower energy decay (was 0.98)
+    this.flapCooldown = 0;         // Prevent rapid flapping
+    this.maxFlapCooldown = 6;      // Frames to wait between flaps
+    this.flapMomentum = 0;         // Forward momentum from flapping
+    this.maxFlapMomentum = 0.8;    // Increased maximum momentum
+    this.momentumDecay = 0.99;     // Much slower momentum decay (was 0.95)
+    this.liftCoefficient = 0.025;  // Increased lift coefficient
+    this.baseLift = 0.02;          // New constant base lift factor
+    this.consecutiveFlaps = 0;     // Track consecutive flaps
+    this.flapDiminishFactor = 0.9; // Reduced diminishing returns
+
     // Weather effects for stormy mode
     this.weatherEffectTimer = 0;
     this.weatherEffectDuration = 0;
@@ -335,8 +348,26 @@ class Vehicle {
 
     update() {
     if (!this.isDead) {
-      // Update velocity and position
-      this.velocity += this.gravity;
+      // Decrease flap cooldown
+      if (this.flapCooldown > 0) {
+        this.flapCooldown--;
+      } else {
+        // Reset consecutive flaps counter when cooldown is complete
+        // This gives the player a chance to reset the diminishing returns
+        this.consecutiveFlaps = Math.max(0, this.consecutiveFlaps - 0.05);
+      }
+
+      // Wing energy decays over time
+      this.wingEnergy *= this.wingDecay;
+
+      // Forward momentum decays over time
+      this.flapMomentum *= this.momentumDecay;
+
+      // Calculate lift based on forward momentum plus base lift
+      let lift = (this.flapMomentum * this.liftCoefficient) + this.baseLift;
+
+      // Apply gravity, wing energy and lift to velocity
+      this.velocity += this.gravity - this.wingEnergy - lift;
 
       // Apply weather effects in stormy mode
       if (gameMode === 'stormy') {
@@ -472,11 +503,21 @@ class Vehicle {
 
       this.y += this.velocity;
 
-      // Animate rotation based on velocity
-      this.rotation = constrain(map(this.velocity, -10, 15, -PI/6, PI/2), -PI/6, PI/2);
+      // Animate rotation based on velocity and wing energy - more subtle
+      let targetRotation = constrain(map(this.velocity, -10, 15, -PI/8, PI/2), -PI/8, PI/2);
+      // Add a very slight upward tilt when actively flapping
+      if (this.wingEnergy > 0.01) {
+        targetRotation -= this.wingEnergy * 0.1; // Reduced tilt effect
+      }
+      // Smoother, more gradual rotation transition
+      this.rotation = lerp(this.rotation, targetRotation, 0.05); // Slower transition
 
-      // Update animation frame
-      this.frameCount += this.animationSpeed;
+      // Update animation frame - slightly speed up animation during active flapping
+      let currentAnimSpeed = this.animationSpeed;
+      if (this.wingEnergy > 0.01) {
+        currentAnimSpeed = this.animationSpeed * 1.2; // Reduced animation speed increase
+      }
+      this.frameCount += currentAnimSpeed;
       this.currentFrame = this.frames[floor(this.frameCount) % this.frames.length];
 
       // Add white smoke trail effect
@@ -509,17 +550,35 @@ class Vehicle {
   }
 
     flap() {
-    if (!this.isDead) {
-      this.velocity = this.flapStrength;
+    if (!this.isDead && this.flapCooldown <= 0) {
+      // Set cooldown to prevent rapid flapping
+      this.flapCooldown = this.maxFlapCooldown;
+
+      // Track consecutive flaps
+      this.consecutiveFlaps = Math.min(this.consecutiveFlaps + 1, 5);
+
+      // Calculate diminishing factor based on consecutive flaps
+      let diminishFactor = Math.pow(this.flapDiminishFactor, this.consecutiveFlaps - 1);
+
+      // Initial burst of upward force - increased but still with diminishing returns
+      this.velocity = this.flapStrength * 0.25 * diminishFactor;
+
+      // Add wing energy that dissipates over time - increased for longer flight
+      this.wingEnergy = 0.08 * diminishFactor; // Increased from 0.06
+
+      // Add forward momentum from flapping - increased for longer flight
+      let momentumGain = 0.25 * diminishFactor; // Increased from 0.15
+      this.flapMomentum = min(this.flapMomentum + momentumGain, this.maxFlapMomentum);
+
       sounds.flap.play();
 
-      // Add white smoke particles
+      // Add white smoke particles with more varied velocities
       for (let i = 0; i < 5; i++) {
         particles.push(new Particle(
           this.x - 5,
           this.y + random(-5, 5),
-          random(-2, -1),
-          random(-1, 1),
+          random(-2.5, -0.5), // More varied horizontal velocity
+          random(-1.5, 1.5),  // More varied vertical velocity
           random(4, 8),
           color(255, 255, 255, 150)
         ));
@@ -1413,8 +1472,8 @@ function updateGameplay() {
     pipes.push(new Pipe());
     framesSinceLastPipe = 0;
 
-    // Gradually decrease pipe interval as score increases
-    pipeInterval = max(80, 100 - floor(score/10) * 2);
+    // Gradually decrease pipe interval as score increases, but keep it higher than before
+    pipeInterval = max(160, 200 - floor(score/10) * 2); // Doubled min from 80 to 160, base from 100 to 200
   }
 
   // Update pipes with modified speed
@@ -1871,7 +1930,7 @@ function startGame() {
   difficultyLevel = 1;
   gameSpeed = 1;
   framesSinceLastPipe = 0;
-  pipeInterval = 120;
+  pipeInterval = 240; // Doubled from 120 to 240
   streakCount = 0;
   comboMultiplier = 1;
   perfectPass = false;
@@ -1911,7 +1970,7 @@ function resetGame() {
   gameSpeed = 1;
   framesSinceLastPipe = 0;
   // Increase initial pipe interval to give player more time between pipes
-  pipeInterval = 120;
+  pipeInterval = 240; // Doubled from 120 to 240
   streakCount = 0;
   comboMultiplier = 1;
   perfectPass = false;
