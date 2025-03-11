@@ -308,7 +308,7 @@ class Vehicle {
     this.y = height / 2;
     this.velocity = 0;
     this.gravity = 0.1;
-    this.flapStrength = -3;
+    this.flapStrength = -3; // Reduced from -3 to make flaps less powerful
     this.width = 34;
     this.height = 24;
     this.rotation = 0;
@@ -321,16 +321,15 @@ class Vehicle {
 
     // Bird-like flight physics
     this.wingEnergy = 0;           // Energy from wing flap
-    this.wingDecay = 0.97;        // Much slower energy decay (was 0.98)
+    this.wingDecay = 0.995;        // Much slower energy decay
     this.flapCooldown = 0;         // Prevent rapid flapping
     this.maxFlapCooldown = 6;      // Frames to wait between flaps
     this.flapMomentum = 0;         // Forward momentum from flapping
-    this.maxFlapMomentum = 0.8;    // Increased maximum momentum
-    this.momentumDecay = 0.99;     // Much slower momentum decay (was 0.95)
-    this.liftCoefficient = 0.025;  // Increased lift coefficient
-    this.baseLift = 0.02;          // New constant base lift factor
-    this.consecutiveFlaps = 0;     // Track consecutive flaps
-    this.flapDiminishFactor = 0.9; // Reduced diminishing returns
+    this.maxFlapMomentum = 0.8;    // Maximum momentum
+    this.momentumDecay = 0.59;     // Slow momentum decay
+    this.liftCoefficient = 0.025;  // Lift coefficient
+    this.baseLift = 0.02;          // Constant base lift factor
+    // Removed consecutiveFlaps and flapDiminishFactor
 
     // Weather effects for stormy mode
     this.weatherEffectTimer = 0;
@@ -351,11 +350,8 @@ class Vehicle {
       // Decrease flap cooldown
       if (this.flapCooldown > 0) {
         this.flapCooldown--;
-      } else {
-        // Reset consecutive flaps counter when cooldown is complete
-        // This gives the player a chance to reset the diminishing returns
-        this.consecutiveFlaps = Math.max(0, this.consecutiveFlaps - 0.05);
       }
+      // Removed consecutiveFlaps counter reset
 
       // Wing energy decays over time
       this.wingEnergy *= this.wingDecay;
@@ -554,20 +550,17 @@ class Vehicle {
       // Set cooldown to prevent rapid flapping
       this.flapCooldown = this.maxFlapCooldown;
 
-      // Track consecutive flaps
-      this.consecutiveFlaps = Math.min(this.consecutiveFlaps + 1, 5);
+      // Removed tracking consecutive flaps
+      // Removed diminishing factor calculation
 
-      // Calculate diminishing factor based on consecutive flaps
-      let diminishFactor = Math.pow(this.flapDiminishFactor, this.consecutiveFlaps - 1);
+      // Initial burst of upward force - reduced for less height
+      this.velocity = this.flapStrength * 0.2; // Reduced from 0.25 to 0.2
 
-      // Initial burst of upward force - increased but still with diminishing returns
-      this.velocity = this.flapStrength * 0.25 * diminishFactor;
+      // Add wing energy that dissipates over time - reduced for less height
+      this.wingEnergy = 0.05; // Reduced from 0.08 to 0.05
 
-      // Add wing energy that dissipates over time - increased for longer flight
-      this.wingEnergy = 0.08 * diminishFactor; // Increased from 0.06
-
-      // Add forward momentum from flapping - increased for longer flight
-      let momentumGain = 0.25 * diminishFactor; // Increased from 0.15
+      // Add forward momentum from flapping - consistent for every flap
+      let momentumGain = 0.25;
       this.flapMomentum = min(this.flapMomentum + momentumGain, this.maxFlapMomentum);
 
       sounds.flap.play();
@@ -714,7 +707,7 @@ class Pipe {
     this.bottom = height - (this.top + this.spacing);
     this.x = width;
     this.w = 52;
-    this.speed = 2 * gameSpeed;
+    this.speed = 2.4 * gameSpeed; // Increased by 20% from 2.0 to 2.4
     this.passed = false;
     this.highlighted = false; // For visual effect when passing through
   }
@@ -1481,8 +1474,8 @@ function updateGameplay() {
     // Make sure pipe exists
     if (!pipes[i]) continue;
 
-    // Update pipe speed and position
-    let pipeSpeed = 2 * gameSpeed * modifier.speedMultiplier;
+    // Update pipe speed and position - increased by 20%
+    let pipeSpeed = 2.4 * gameSpeed * modifier.speedMultiplier; // Increased from 2.0 to 2.4
 
     // Apply weather effects to pipe speed in stormy mode
     if (gameMode === 'stormy' && vehicle.weatherEffectType && !vehicle.weatherEffectWarning) {
