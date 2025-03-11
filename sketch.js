@@ -305,7 +305,7 @@ function createMedalGraphic(medalColor) {
 class Vehicle {
     constructor() {
     this.x = 80;
-    this.y = height / 2;
+    this.y = height / 2; // This already positions the plane in the middle of the screen height
     this.velocity = 0;
     this.gravity = 0.1;
     this.flapStrength = -3; // Reduced from -3 to make flaps less powerful
@@ -1430,8 +1430,8 @@ function updateGameplay() {
   let modifier = gameModifiers[gameMode];
 
   if (runwayMode) {
-    // In runway mode, plane stays stationary on runway
-    vehicle.y = height - bgLayers[0].height/2 - vehicle.height/2;
+    // In runway mode, plane stays stationary in the middle of the screen
+    vehicle.y = height / 2;
     vehicle.velocity = 0;
     vehicle.rotation = 0;
 
