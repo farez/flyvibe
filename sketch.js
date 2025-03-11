@@ -1365,7 +1365,7 @@ function drawStartScreen() {
   noStroke();
   textSize(16);
   fill(255);
-  text("THE GAME EVERYONE'S TALKING ABOUT", width/2, titleY + 30);
+  text("", width/2, titleY + 30);
 
   // Instructions
   textSize(24);
