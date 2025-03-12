@@ -305,7 +305,7 @@ function createMedalGraphic(medalColor) {
 // Vehicle class representing the player-controlled plane
 class Vehicle {
     constructor() {
-    this.x = width * 0.2; // Position at 20% of screen width instead of fixed value
+    this.x = width * 0.4; // Position at 40% (2/5) of screen width instead of 20%
     this.y = height / 2; // This already positions the plane in the middle of the screen height
     this.velocity = 0;
     this.gravity = 0.1;
