@@ -728,89 +728,115 @@ class Pipe {
 
   show() {
     push();
+
+    // Define a more refined color palette
+    const topColors = {
+      base: color(120, 180, 210),      // Light blue-teal
+      highlight: color(150, 210, 240),  // Lighter blue-teal
+      shadow: color(80, 140, 170),      // Darker blue-teal
+      accent: color(220, 240, 255)      // Very light blue accent
+    };
+
+    const bottomColors = {
+      base: color(180, 140, 210),       // Light purple
+      highlight: color(210, 170, 240),  // Lighter purple
+      shadow: color(140, 100, 170),     // Darker purple
+      accent: color(240, 220, 255)      // Very light purple accent
+    };
+
+    // Add glow effect when highlighted (passing through)
+    if (this.highlighted) {
+      // Draw glow around the gap
+      noFill();
+      for (let i = 0; i < 10; i++) {
+        const alpha = map(i, 0, 10, 150, 0);
+        const spread = map(i, 0, 10, 0, 20);
+
+        // Top pillar glow
+        stroke(topColors.accent.levels[0], topColors.accent.levels[1], topColors.accent.levels[2], alpha);
+        strokeWeight(2 + spread/2);
+        line(this.x, this.top + spread, this.x + this.w, this.top + spread);
+
+        // Bottom pillar glow
+        stroke(bottomColors.accent.levels[0], bottomColors.accent.levels[1], bottomColors.accent.levels[2], alpha);
+        strokeWeight(2 + spread/2);
+        line(this.x, height - this.bottom - spread, this.x + this.w, height - this.bottom - spread);
+      }
+    }
+
+    // Draw top pillar
     noStroke();
 
-    // Draw top obstacle - RED with 3D effect
-    // Main pipe body with subtle gradient
-    for (let i = 0; i < this.top; i += 5) {
-      // Create gradient from darker to brighter red (bottom to top)
-      let gradientColor = map(i, 0, this.top, 0, 50);
-      fill(200 + gradientColor, 0, 0);
+    // Main column body with gradient
+    for (let i = 0; i < this.top; i += 3) {
+      // Create gradient from top to bottom
+      const progress = i / this.top;
+      const columnColor = lerpColor(topColors.highlight, topColors.base, progress);
+      fill(columnColor);
 
-      // Add perspective effect - pipe gets narrower at the top
-      let perspectiveWidth = map(i, 0, this.top, this.w, this.w * 0.8);
-      let xOffset = (this.w - perspectiveWidth) / 2;
-      rect(this.x + xOffset, i, perspectiveWidth, 5);
+      // Add subtle curve to make it look more like a column
+      const widthMod = sin(progress * PI) * 5;
+      const columnWidth = this.w - widthMod;
+      const xOffset = widthMod / 2;
+
+      rect(this.x + xOffset, i, columnWidth, 3, 2);
     }
+
+    // Column capital (decorative top)
+    fill(topColors.highlight);
+    rect(this.x - 5, this.top - 15, this.w + 10, 15, 3);
+
+    // Decorative lines on capital
+    stroke(topColors.shadow);
+    strokeWeight(1);
+    line(this.x - 2, this.top - 10, this.x + this.w + 2, this.top - 10);
+    line(this.x - 2, this.top - 5, this.x + this.w + 2, this.top - 5);
+
+    // Left edge shadow
+    noStroke();
+    fill(topColors.shadow);
+    rect(this.x, 0, 5, this.top - 15, 2, 0, 0, 2);
 
     // Right edge highlight
-    fill(255, 50, 50); // Lighter red for highlight
-    rect(this.x + this.w - 8, 0, 8, this.top);
+    fill(topColors.highlight);
+    rect(this.x + this.w - 5, 0, 5, this.top - 15, 0, 2, 2, 0);
 
-    // Bottom edge
-    fill(180, 0, 0); // Darker red for shadow
-    rect(this.x, this.top - 10, this.w, 10);
-
-    // 3D pipe opening with depth
-    // Outer rim with gradient
-    for (let r = 0; r < 5; r++) {
-      let rimColor = map(r, 0, 5, 200, 150);
-      fill(rimColor, 0, 0);
-      ellipse(this.x + this.w/2, this.top, this.w * map(r, 0, 5, 0.9, 0.8), 20 - r);
-    }
-
-    // Inner opening
-    fill(100, 0, 0); // Dark red for pipe interior
-    ellipse(this.x + this.w/2, this.top, this.w * 0.7, 15);
-
-    // Deep interior with gradient
-    for (let d = 0; d < 3; d++) {
-      let depthColor = map(d, 0, 3, 80, 30);
-      fill(depthColor, 0, 0);
-      ellipse(this.x + this.w/2, this.top, this.w * map(d, 0, 3, 0.6, 0.4), 10 - d*2);
-    }
-
-    // Draw bottom obstacle - BLUE with 3D effect
+    // Draw bottom pillar
     noStroke();
 
-    // Main pipe body with subtle gradient
-    for (let i = 0; i < this.bottom; i += 5) {
-      // Create gradient from darker to brighter blue (top to bottom)
-      let gradientColor = map(i, 0, this.bottom, 0, 50);
-      fill(0, 0, 200 + gradientColor);
+    // Main column body with gradient
+    for (let i = 0; i < this.bottom; i += 3) {
+      // Create gradient from bottom to top
+      const progress = i / this.bottom;
+      const columnColor = lerpColor(bottomColors.highlight, bottomColors.base, progress);
+      fill(columnColor);
 
-      // Add perspective effect - pipe gets narrower at the bottom
-      let perspectiveWidth = map(i, 0, this.bottom, this.w, this.w * 0.8);
-      let xOffset = (this.w - perspectiveWidth) / 2;
-      rect(this.x + xOffset, height - this.bottom + i, perspectiveWidth, 5);
+      // Add subtle curve to make it look more like a column
+      const widthMod = sin(progress * PI) * 5;
+      const columnWidth = this.w - widthMod;
+      const xOffset = widthMod / 2;
+
+      rect(this.x + xOffset, height - this.bottom + i, columnWidth, 3, 2);
     }
+
+    // Column base (decorative bottom)
+    fill(bottomColors.highlight);
+    rect(this.x - 5, height - this.bottom, this.w + 10, 15, 3);
+
+    // Decorative lines on base
+    stroke(bottomColors.shadow);
+    strokeWeight(1);
+    line(this.x - 2, height - this.bottom + 5, this.x + this.w + 2, height - this.bottom + 5);
+    line(this.x - 2, height - this.bottom + 10, this.x + this.w + 2, height - this.bottom + 10);
+
+    // Left edge shadow
+    noStroke();
+    fill(bottomColors.shadow);
+    rect(this.x, height - this.bottom + 15, 5, this.bottom - 15, 2, 0, 0, 2);
 
     // Right edge highlight
-    fill(50, 50, 255); // Lighter blue for highlight
-    rect(this.x + this.w - 8, height - this.bottom, 8, this.bottom);
-
-    // Top edge
-    fill(0, 0, 180); // Darker blue for shadow
-    rect(this.x, height - this.bottom, this.w, 10);
-
-    // 3D pipe opening with depth
-    // Outer rim with gradient
-    for (let r = 0; r < 5; r++) {
-      let rimColor = map(r, 0, 5, 200, 150);
-      fill(0, 0, rimColor);
-      ellipse(this.x + this.w/2, height - this.bottom, this.w * map(r, 0, 5, 0.9, 0.8), 20 - r);
-    }
-
-    // Inner opening
-    fill(0, 0, 100); // Dark blue for pipe interior
-    ellipse(this.x + this.w/2, height - this.bottom, this.w * 0.7, 15);
-
-    // Deep interior with gradient
-    for (let d = 0; d < 3; d++) {
-      let depthColor = map(d, 0, 3, 80, 20);
-      fill(0, 0, depthColor);
-      ellipse(this.x + this.w/2, height - this.bottom, this.w * map(d, 0, 3, 0.6, 0.4), 10 - d*2);
-    }
+    fill(bottomColors.highlight);
+    rect(this.x + this.w - 5, height - this.bottom + 15, 5, this.bottom - 15, 0, 2, 2, 0);
 
     pop();
   }
