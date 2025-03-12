@@ -45,6 +45,7 @@ let scoreAnimation = { value: 0, target: 0, speed: 0.1 };
 let buttonHover = { restart: false, continue: false };
 let runwayMode = true; // Flag for runway start sequence
 let runwayX = 0; // Runway scroll position
+let fullscreenButton; // Fullscreen toggle button
 
 // Day-night cycle variables
 let dayTime = 0.2; // Start with a fixed time (afternoon) to avoid potential issues
@@ -1162,6 +1163,130 @@ class Button {
   }
 }
 
+// Fullscreen button class
+class FullscreenButton {
+  constructor(size) {
+    this.size = size;
+    this.x = width - this.size - 10;
+    this.y = 10 + this.size/2;
+    this.hover = false;
+    this.pressEffect = 0;
+    this.isFullscreen = false;
+  }
+
+  update() {
+    // Update position if window is resized
+    this.x = width - this.size - 10;
+
+    // Check if mouse is over button
+    this.hover = mouseX > this.x - this.size/2 &&
+                 mouseX < this.x + this.size/2 &&
+                 mouseY > this.y - this.size/2 &&
+                 mouseY < this.y + this.size/2;
+
+    // Press effect animation
+    if (this.pressEffect > 0) {
+      this.pressEffect -= 0.1;
+    }
+
+    // Update fullscreen state - check all possible browser implementations
+    this.isFullscreen = !!(
+      document.fullscreenElement ||
+      document.mozFullScreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement
+    );
+  }
+
+  show() {
+    push();
+    translate(this.x, this.y);
+
+    // Button shadow
+    fill(0, 100);
+    noStroke();
+    ellipse(2, 2 + this.pressEffect, this.size, this.size);
+
+    // Button body
+    if (this.hover) {
+      fill(255, 230, 120);
+      stroke(220, 150, 0);
+    } else {
+      fill(250, 200, 80);
+      stroke(220, 140, 0);
+    }
+
+    strokeWeight(2);
+    ellipse(0, this.pressEffect, this.size, this.size);
+
+    // Fullscreen icon
+    noFill();
+    stroke(40, 20, 0);
+    strokeWeight(2);
+
+    let iconSize = this.size * 0.4;
+
+    // Simple square bracket icon that doesn't change with mode
+    rect(-iconSize/2, -iconSize/2, iconSize, iconSize, 2);
+
+    // Show tooltip when hovering
+    if (this.hover) {
+      noStroke();
+      fill(0, 150);
+      rect(-80, this.size/2 + 10, 160, 30, 5);
+
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(14);
+      text(this.isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen", 0, this.size/2 + 25);
+    }
+
+    pop();
+  }
+
+  click() {
+    if (this.hover) {
+      this.pressEffect = 5;
+      sounds.button.play();
+
+      toggleFullscreen();
+      return true;
+    }
+    return false;
+  }
+}
+
+// Function to toggle fullscreen mode
+function toggleFullscreen() {
+  if (!document.fullscreenElement &&
+      !document.mozFullScreenElement &&
+      !document.webkitFullscreenElement &&
+      !document.msFullscreenElement) {
+    // Enter fullscreen
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen();
+    } else if (docEl.webkitRequestFullscreen) { /* Safari */
+      docEl.webkitRequestFullscreen();
+    } else if (docEl.mozRequestFullScreen) { /* Firefox */
+      docEl.mozRequestFullScreen();
+    } else if (docEl.msRequestFullscreen) { /* IE/Edge */
+      docEl.msRequestFullscreen();
+    }
+  } else {
+    // Exit fullscreen
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) { /* Safari */
+      document.webkitExitFullscreen();
+    } else if (document.mozCancelFullScreen) { /* Firefox */
+      document.mozCancelFullScreen();
+    } else if (document.msExitFullscreen) { /* IE/Edge */
+      document.msExitFullscreen();
+    }
+  }
+}
+
 // UI elements
 let restartButton;
 let continueButton;
@@ -1181,6 +1306,9 @@ let continueButton;
     normalModeButton = new Button(width/2 - 130, height/2, 120, 40, "NORMAL", () => selectGameMode("normal"));
     tailwindModeButton = new Button(width/2, height/2, 120, 40, "TAILWIND", () => selectGameMode("tailwind"));
     stormyModeButton = new Button(width/2 + 130, height/2, 120, 40, "STORMY", () => selectGameMode("stormy"));
+
+    // Create fullscreen button
+    fullscreenButton = new FullscreenButton(40);
 
     // Create background layers for parallax effect
     let skyColor = color(135, 206, 235);
@@ -1234,6 +1362,9 @@ let continueButton;
 
     stormyModeButton.x = width/2 + 130;
     stormyModeButton.y = height/2;
+
+    // Update fullscreen button position
+    fullscreenButton.x = width - fullscreenButton.size - 10;
 
     // Recreate background layers with new dimensions
     bgLayers = [];
@@ -1374,6 +1505,10 @@ function useFont() {
     rect(0, 0, width, height);
     flashOpacity -= 10;
   }
+
+  // Draw Fullscreen button
+  fullscreenButton.update();
+  fullscreenButton.show();
 }
 
 // Draw the start screen
@@ -1857,6 +1992,11 @@ function drawAdScreen() {
 
   // Handle mouse clicks
   function mousePressed() {
+  // Check if fullscreen button was clicked
+  if (fullscreenButton.click()) {
+    return;
+  }
+
   if (gameState === 'start') {
     // Check mode buttons first
     if (normalModeButton.click()) {
