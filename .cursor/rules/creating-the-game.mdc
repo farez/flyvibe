@@ -1,5 +1,5 @@
 ---
-description: Using p5js
+description: Creating the game
 globs: 
 alwaysApply: false
 ---
@@ -11,3 +11,4 @@ your own.
 - Always think like an entrepreneur and consider virality and ways to make 
 money from the game.
 - When a file becomes too long, split it into smaller files. When a function becomes too long, split it into smaller functions.
+- Do not run any web server to sarve the page. I already have it running.

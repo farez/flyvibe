@@ -304,7 +304,7 @@ function createMedalGraphic(medalColor) {
 // Vehicle class representing the player-controlled plane
 class Vehicle {
     constructor() {
-    this.x = 80;
+    this.x = 120;
     this.y = height / 2; // This already positions the plane in the middle of the screen height
     this.velocity = 0;
     this.gravity = 0.1;
@@ -701,9 +701,9 @@ class Vehicle {
 // Pipe class representing obstacles
 class Pipe {
   constructor() {
-    // Increase base spacing from 150 to 200, and minimum from 100 to 180
-    this.spacing = constrain(200 - (difficultyLevel * 5), 180, 200);
-    this.top = random(height * 0.1, height * 0.6);
+    // Adjust spacing for landscape mode
+    this.spacing = constrain(180 - (difficultyLevel * 5), 150, 180);
+    this.top = random(height * 0.1, height * 0.5);
     this.bottom = height - (this.top + this.spacing);
     this.x = width;
     this.w = 52;
@@ -1166,14 +1166,14 @@ let continueButton;
 
   // Setup function to initialize the game
   function setup() {
-    createCanvas(400, 600);
+    createCanvas(600, 400);
   imageMode(CORNER);
 
   // Create UI elements
-  restartButton = new Button(width/2, height/2 + 50, 180, 50, "RESTART", resetGame);
-  continueButton = new Button(width/2, height/2 + 120, 180, 50, "CONTINUE", watchAd);
-  shareButton = new Button(width/2 - 95, height/2 + 190, 180, 50, "SHARE ON X", shareScore);
-  challengeButton = new Button(width/2 + 95, height/2 + 190, 180, 50, "CHALLENGE", challengeFriend);
+  restartButton = new Button(width/2, height/2 + 40, 180, 50, "RESTART", resetGame);
+  continueButton = new Button(width/2, height/2 + 100, 180, 50, "CONTINUE", watchAd);
+  shareButton = new Button(width/2 - 95, height/2 + 160, 180, 50, "SHARE ON X", shareScore);
+  challengeButton = new Button(width/2 + 95, height/2 + 160, 180, 50, "CHALLENGE", challengeFriend);
 
   // Create mode selection buttons - moved lower to avoid covering the SELECT GAME MODE text
   normalModeButton = new Button(width/2 - 130, height/2, 120, 40, "NORMAL", () => selectGameMode("normal"));
@@ -1186,9 +1186,9 @@ let continueButton;
   let hillColor2 = color(70, 130, 70);
   let groundColor = color(210, 180, 140);
 
-  bgLayers.push(new BackgroundLayer(height - 100, 100, 1, groundColor)); // Ground
-  bgLayers.push(new BackgroundLayer(height - 150, 50, 0.5, hillColor2)); // Far hills
-  bgLayers.push(new BackgroundLayer(height - 180, 80, 0.8, hillColor1)); // Near hills
+  bgLayers.push(new BackgroundLayer(height - 80, 80, 1, groundColor)); // Ground
+  bgLayers.push(new BackgroundLayer(height - 120, 40, 0.5, hillColor2)); // Far hills
+  bgLayers.push(new BackgroundLayer(height - 150, 70, 0.8, hillColor1)); // Near hills
 
   // Create initial clouds
   for (let i = 0; i < 5; i++) {
@@ -1340,7 +1340,7 @@ function useFont() {
 // Draw the start screen
 function drawStartScreen() {
   // Title animation with rainbow effect if enabled
-  let titleY = height/3 + sin(frameCount * 0.05) * 5;
+  let titleY = height/4 + sin(frameCount * 0.05) * 5;
 
   // Draw title
   textSize(50);
@@ -1367,7 +1367,7 @@ function drawStartScreen() {
   fill(255, 255, 0);
   noStroke(); // Ensure no outline on the text
   // Fixed position for SELECT GAME MODE text, no animation
-  text("SELECT GAME MODE:", width/2, height/2 - 50);
+  text("SELECT GAME MODE:", width/2, height/2 - 30);
 
   // Update and show mode buttons
   normalModeButton.update();
@@ -1405,23 +1405,23 @@ function drawStartScreen() {
   fill(255);
   textAlign(CENTER);
 
-  text("Standard", width/2 - 130, height/2 + 40);
-  text("1× Points", width/2 - 130, height/2 + 55);
+  text("Standard", width/2 - 130, height/2 + 30);
+  text("1× Points", width/2 - 130, height/2 + 45);
 
-  text("Wind Boost", width/2, height/2 + 40);
-  text("2× Points", width/2, height/2 + 55);
+  text("Wind Boost", width/2, height/2 + 30);
+  text("2× Points", width/2, height/2 + 45);
 
-  text("Turbulence", width/2 + 130, height/2 + 40);
-  text("5× Points", width/2 + 130, height/2 + 55);
+  text("Turbulence", width/2 + 130, height/2 + 30);
+  text("5× Points", width/2 + 130, height/2 + 45);
 
   // Instructions - moved to the bottom - no outlines
   noStroke();
   textSize(24);
   fill(255);
-  text("Click or Press Space to Start", width/2, height/2 + 180);
+  text("Click or Press Space to Start", width/2, height - 60);
 
   textSize(16);
-  text("Control with Mouse or Space Bar", width/2, height/2 + 210);
+  text("Control with Mouse or Space Bar", width/2, height - 30);
 }
 
 // Update game during gameplay
@@ -1666,9 +1666,9 @@ function drawGameOverScreen() {
 
   // Draw score panel
   let panelWidth = 300;
-  let panelHeight = 200;
+  let panelHeight = 180;
   let panelX = width/2 - panelWidth/2;
-  let panelY = height/3 - panelHeight/2;
+  let panelY = height/4 - panelHeight/2;
 
   // Panel shadow
   fill(0, 100);
@@ -1681,16 +1681,16 @@ function drawGameOverScreen() {
   rect(panelX, panelY, panelWidth, panelHeight, 20);
 
   // Game over text
-      textAlign(CENTER);
-  textSize(40);
+  textAlign(CENTER);
+  textSize(36);
   fill(200, 50, 50);
   noStroke();
-  text("GAME OVER", width/2, panelY + 50);
+  text("GAME OVER", width/2, panelY + 40);
 
   // Score text
   textSize(24);
   fill(50);
-  text("Score: " + score, width/2, panelY + 90);
+  text("Score: " + score, width/2, panelY + 80);
 
   // Game mode text
   textSize(18);
@@ -1707,14 +1707,14 @@ function drawGameOverScreen() {
       break;
   }
   fill(modeColor);
-  text(gameMode.toUpperCase() + " MODE", width/2, panelY + 115);
+  text(gameMode.toUpperCase() + " MODE", width/2, panelY + 105);
 
   // High score
   textSize(24);
   fill(50);
   if (score > highScore) {
     highScore = score;
-    text("NEW HIGH SCORE!", width/2, panelY + 145);
+    text("NEW HIGH SCORE!", width/2, panelY + 135);
 
     // Update leaderboard with default player name
     let playerEntry = leaderboard.find(entry => entry.name === "Player");
@@ -1735,7 +1735,7 @@ function drawGameOverScreen() {
       }
     }
   } else {
-    text("Best: " + highScore, width/2, panelY + 145);
+    text("Best: " + highScore, width/2, panelY + 135);
   }
 
   // Medal based on score
@@ -1763,7 +1763,7 @@ function drawGameOverScreen() {
   // Draw viral message
   textSize(18);
   fill(255);
-  text("SHARE YOUR SCORE!", width/2, height - 50);
+  text("SHARE YOUR SCORE!", width/2, height - 20);
 }
 
 // Draw the ad screen
@@ -1775,13 +1775,13 @@ function drawAdScreen() {
 
   // Draw progress bar
   fill(50);
-  rect(50, height/2 + 50, width - 100, 20);
+  rect(100, height/2 + 40, width - 200, 20);
   fill(0, 200, 0);
-  rect(50, height/2 + 50, (width - 100) * progress, 20);
+  rect(100, height/2 + 40, (width - 200) * progress, 20);
 
   // Draw ad text
-      textSize(32);
-      textAlign(CENTER);
+  textSize(32);
+  textAlign(CENTER);
   fill(255);
   text("Watching Ad...", width/2, height/2);
 
@@ -1790,10 +1790,10 @@ function drawAdScreen() {
 
   // Check if ad is finished
   if (progress >= 1) {
-        vehicle.y = height / 2;
-        vehicle.velocity = 0;
+    vehicle.y = height / 2;
+    vehicle.velocity = 0;
     vehicle.isDead = false;
-        gameState = 'playing';
+    gameState = 'playing';
 
     // Create revival particles
     for (let i = 0; i < 30; i++) {
@@ -1806,8 +1806,8 @@ function drawAdScreen() {
         color(100, 255, 100, 200)
       ));
     }
-    }
   }
+}
 
   // Handle mouse clicks
   function mousePressed() {
