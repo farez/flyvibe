@@ -1163,6 +1163,11 @@ class Button {
   }
 }
 
+// Detect if on mobile device
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 // Fullscreen button class
 class FullscreenButton {
   constructor(size) {
@@ -1173,13 +1178,13 @@ class FullscreenButton {
     this.pressEffect = 0;
     this.isFullscreen = false;
 
-    // Check if running on iOS (iPhone/iPad)
-    this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // Check if running on mobile
+    this.isMobile = isMobileDevice();
   }
 
   update() {
-    // Skip if on iOS
-    if (this.isIOS) return;
+    // Skip if on mobile
+    if (this.isMobile) return;
 
     // Update position if window is resized
     this.x = width - this.size - 10;
@@ -1205,8 +1210,8 @@ class FullscreenButton {
   }
 
   show() {
-    // Skip if on iOS
-    if (this.isIOS) return;
+    // Skip if on mobile
+    if (this.isMobile) return;
 
     push();
     translate(this.x, this.y);
@@ -1254,8 +1259,8 @@ class FullscreenButton {
   }
 
   click() {
-    // Skip if on iOS
-    if (this.isIOS) return false;
+    // Skip if on mobile
+    if (this.isMobile) return false;
 
     if (this.hover) {
       this.pressEffect = 5;
@@ -1270,35 +1275,8 @@ class FullscreenButton {
 
 // Function to toggle fullscreen mode
 function toggleFullscreen() {
-  // Check if running on iOS (iPhone/iPad)
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-  // If on iOS, show a message about fullscreen limitations
-  if (isIOS) {
-    // Create a temporary message element
-    const message = document.createElement('div');
-    message.style.position = 'fixed';
-    message.style.top = '50%';
-    message.style.left = '50%';
-    message.style.transform = 'translate(-50%, -50%)';
-    message.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-    message.style.color = 'white';
-    message.style.padding = '20px';
-    message.style.borderRadius = '10px';
-    message.style.zIndex = '1000';
-    message.style.maxWidth = '80%';
-    message.style.textAlign = 'center';
-    message.innerHTML = 'Fullscreen mode is not supported in iOS Safari.<br>Please use landscape orientation for a better experience.';
-
-    document.body.appendChild(message);
-
-    // Remove the message after 3 seconds
-    setTimeout(() => {
-      document.body.removeChild(message);
-    }, 3000);
-
-    return;
-  }
+  // Skip if on mobile
+  if (isMobileDevice()) return;
 
   if (!document.fullscreenElement &&
       !document.mozFullScreenElement &&
@@ -1337,6 +1315,21 @@ let continueButton;
   function setup() {
     createCanvas(windowWidth, windowHeight);
     imageMode(CORNER);
+
+    // Check if we're on mobile in portrait mode
+    if (isMobileDevice() && windowWidth < windowHeight) {
+      showRotationMessage();
+    }
+
+    // Add orientation change listener for mobile devices
+    if (isMobileDevice()) {
+      window.addEventListener('orientationchange', function() {
+        // Small delay to allow the browser to update dimensions
+        setTimeout(function() {
+          windowResized();
+        }, 100);
+      });
+    }
 
     // Create UI elements
     restartButton = new Button(width/2, height/2 + 40, 180, 50, "RESTART", resetGame);
@@ -1383,6 +1376,19 @@ let continueButton;
   function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
 
+    // Check if we should force landscape orientation on mobile
+    const isMobile = isMobileDevice();
+    if (isMobile && windowWidth < windowHeight) {
+      // We're on mobile in portrait mode - add a rotation suggestion
+      showRotationMessage();
+    }
+
+    // Reposition UI elements
+    repositionUI();
+  }
+
+  // Function to reposition all UI elements after resize
+  function repositionUI() {
     // Reposition UI elements
     restartButton.x = width/2;
     restartButton.y = height/2 + 40;
@@ -1417,6 +1423,33 @@ let continueButton;
     bgLayers.push(new BackgroundLayer(height - 80, 80, 1, groundColor)); // Ground
     bgLayers.push(new BackgroundLayer(height - 120, 40, 0.5, hillColor2)); // Far hills
     bgLayers.push(new BackgroundLayer(height - 150, 70, 0.8, hillColor1)); // Near hills
+  }
+
+  // Function to show a message suggesting rotation to landscape
+  function showRotationMessage() {
+    // Create a temporary message element
+    const message = document.createElement('div');
+    message.style.position = 'fixed';
+    message.style.top = '50%';
+    message.style.left = '50%';
+    message.style.transform = 'translate(-50%, -50%)';
+    message.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    message.style.color = 'white';
+    message.style.padding = '20px';
+    message.style.borderRadius = '10px';
+    message.style.zIndex = '1000';
+    message.style.maxWidth = '80%';
+    message.style.textAlign = 'center';
+    message.innerHTML = 'For the best experience, please rotate your device to landscape mode.';
+
+    document.body.appendChild(message);
+
+    // Remove the message after 3 seconds
+    setTimeout(() => {
+      if (document.body.contains(message)) {
+        document.body.removeChild(message);
+      }
+    }, 3000);
   }
 
 // Helper function to use the appropriate font
