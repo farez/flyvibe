@@ -304,7 +304,7 @@ function createMedalGraphic(medalColor) {
 // Vehicle class representing the player-controlled plane
 class Vehicle {
     constructor() {
-    this.x = 120;
+    this.x = width * 0.2; // Position at 20% of screen width instead of fixed value
     this.y = height / 2; // This already positions the plane in the middle of the screen height
     this.velocity = 0;
     this.gravity = 0.1;
@@ -701,8 +701,10 @@ class Vehicle {
 // Pipe class representing obstacles
 class Pipe {
   constructor() {
-    // Adjust spacing for landscape mode
-    this.spacing = constrain(180 - (difficultyLevel * 5), 150, 180);
+    // Adjust spacing based on window height
+    let minSpacing = height * 0.3; // 30% of screen height
+    let maxSpacing = height * 0.4; // 40% of screen height
+    this.spacing = constrain(maxSpacing - (difficultyLevel * height * 0.01), minSpacing, maxSpacing);
     this.top = random(height * 0.1, height * 0.5);
     this.bottom = height - (this.top + this.spacing);
     this.x = width;
@@ -1166,46 +1168,83 @@ let continueButton;
 
   // Setup function to initialize the game
   function setup() {
-    createCanvas(600, 400);
-  imageMode(CORNER);
+    createCanvas(windowWidth, windowHeight);
+    imageMode(CORNER);
 
-  // Create UI elements
-  restartButton = new Button(width/2, height/2 + 40, 180, 50, "RESTART", resetGame);
-  continueButton = new Button(width/2, height/2 + 100, 180, 50, "CONTINUE", watchAd);
-  shareButton = new Button(width/2 - 95, height/2 + 160, 180, 50, "SHARE ON X", shareScore);
-  challengeButton = new Button(width/2 + 95, height/2 + 160, 180, 50, "CHALLENGE", challengeFriend);
+    // Create UI elements
+    restartButton = new Button(width/2, height/2 + 40, 180, 50, "RESTART", resetGame);
+    continueButton = new Button(width/2, height/2 + 100, 180, 50, "CONTINUE", watchAd);
+    shareButton = new Button(width/2 - 95, height/2 + 160, 180, 50, "SHARE ON X", shareScore);
+    challengeButton = new Button(width/2 + 95, height/2 + 160, 180, 50, "CHALLENGE", challengeFriend);
 
-  // Create mode selection buttons - moved lower to avoid covering the SELECT GAME MODE text
-  normalModeButton = new Button(width/2 - 130, height/2, 120, 40, "NORMAL", () => selectGameMode("normal"));
-  tailwindModeButton = new Button(width/2, height/2, 120, 40, "TAILWIND", () => selectGameMode("tailwind"));
-  stormyModeButton = new Button(width/2 + 130, height/2, 120, 40, "STORMY", () => selectGameMode("stormy"));
+    // Create mode selection buttons - moved lower to avoid covering the SELECT GAME MODE text
+    normalModeButton = new Button(width/2 - 130, height/2, 120, 40, "NORMAL", () => selectGameMode("normal"));
+    tailwindModeButton = new Button(width/2, height/2, 120, 40, "TAILWIND", () => selectGameMode("tailwind"));
+    stormyModeButton = new Button(width/2 + 130, height/2, 120, 40, "STORMY", () => selectGameMode("stormy"));
 
-  // Create background layers for parallax effect
-  let skyColor = color(135, 206, 235);
-  let hillColor1 = color(100, 155, 100);
-  let hillColor2 = color(70, 130, 70);
-  let groundColor = color(210, 180, 140);
+    // Create background layers for parallax effect
+    let skyColor = color(135, 206, 235);
+    let hillColor1 = color(100, 155, 100);
+    let hillColor2 = color(70, 130, 70);
+    let groundColor = color(210, 180, 140);
 
-  bgLayers.push(new BackgroundLayer(height - 80, 80, 1, groundColor)); // Ground
-  bgLayers.push(new BackgroundLayer(height - 120, 40, 0.5, hillColor2)); // Far hills
-  bgLayers.push(new BackgroundLayer(height - 150, 70, 0.8, hillColor1)); // Near hills
+    bgLayers.push(new BackgroundLayer(height - 80, 80, 1, groundColor)); // Ground
+    bgLayers.push(new BackgroundLayer(height - 120, 40, 0.5, hillColor2)); // Far hills
+    bgLayers.push(new BackgroundLayer(height - 150, 70, 0.8, hillColor1)); // Near hills
 
-  // Create initial clouds
-  for (let i = 0; i < 5; i++) {
-    clouds.push(new Cloud());
-    clouds[i].x = random(width);
+    // Create initial clouds
+    for (let i = 0; i < 5; i++) {
+      clouds.push(new Cloud());
+      clouds[i].x = random(width);
+    }
+
+    // Initialize game
+    resetGame();
+
+    // Set text properties
+    // Don't call textFont when fonts.main is null
+
+    // Start background music (looping)
+    sounds.background.setVolume(0.3);
+    sounds.background.loop();
   }
 
-  // Initialize game
-  resetGame();
+  // Handle window resizing
+  function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
 
-  // Set text properties
-  // Don't call textFont when fonts.main is null
+    // Reposition UI elements
+    restartButton.x = width/2;
+    restartButton.y = height/2 + 40;
 
-  // Start background music (looping)
-  sounds.background.setVolume(0.3);
-  sounds.background.loop();
-}
+    continueButton.x = width/2;
+    continueButton.y = height/2 + 100;
+
+    shareButton.x = width/2 - 95;
+    shareButton.y = height/2 + 160;
+
+    challengeButton.x = width/2 + 95;
+    challengeButton.y = height/2 + 160;
+
+    normalModeButton.x = width/2 - 130;
+    normalModeButton.y = height/2;
+
+    tailwindModeButton.x = width/2;
+    tailwindModeButton.y = height/2;
+
+    stormyModeButton.x = width/2 + 130;
+    stormyModeButton.y = height/2;
+
+    // Recreate background layers with new dimensions
+    bgLayers = [];
+    let hillColor1 = color(100, 155, 100);
+    let hillColor2 = color(70, 130, 70);
+    let groundColor = color(210, 180, 140);
+
+    bgLayers.push(new BackgroundLayer(height - 80, 80, 1, groundColor)); // Ground
+    bgLayers.push(new BackgroundLayer(height - 120, 40, 0.5, hillColor2)); // Far hills
+    bgLayers.push(new BackgroundLayer(height - 150, 70, 0.8, hillColor1)); // Near hills
+  }
 
 // Helper function to use the appropriate font
 function useFont() {
@@ -1343,7 +1382,7 @@ function drawStartScreen() {
   let titleY = height/4 + sin(frameCount * 0.05) * 5;
 
   // Draw title
-  textSize(50);
+  textSize(min(50, width * 0.12)); // Responsive text size
   textAlign(CENTER);
 
   // Shadow
@@ -1358,12 +1397,12 @@ function drawStartScreen() {
 
   // Viral tagline
   noStroke();
-  textSize(16);
+  textSize(min(16, width * 0.04)); // Responsive text size
   fill(255);
   text("", width/2, titleY + 30);
 
   // Game mode selection - now directly after the title - NO ANIMATION
-  textSize(24);
+  textSize(min(24, width * 0.06)); // Responsive text size
   fill(255, 255, 0);
   noStroke(); // Ensure no outline on the text
   // Fixed position for SELECT GAME MODE text, no animation
@@ -1401,7 +1440,7 @@ function drawStartScreen() {
 
   // Add mode descriptions - no outlines - updated positions
   noStroke();
-  textSize(14);
+  textSize(min(14, width * 0.035)); // Responsive text size
   fill(255);
   textAlign(CENTER);
 
@@ -1416,11 +1455,11 @@ function drawStartScreen() {
 
   // Instructions - moved to the bottom - no outlines
   noStroke();
-  textSize(24);
+  textSize(min(24, width * 0.06)); // Responsive text size
   fill(255);
   text("Click or Press Space to Start", width/2, height - 60);
 
-  textSize(16);
+  textSize(min(16, width * 0.04)); // Responsive text size
   text("Control with Mouse or Space Bar", width/2, height - 30);
 }
 
@@ -1585,17 +1624,23 @@ function drawGameplay() {
 
     // Draw runway markings - fixed positions
     fill(255);
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < width/100 + 1; i++) {
       rect(i * 100, height - bgLayers[0].height/2 + 18, 50, 4);
     }
 
     // Draw runway lights - fixed positions
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < width/40 + 1; i++) {
       fill(255, 255, 0); // Yellow lights
       ellipse(i * 40, height - bgLayers[0].height/2 + 5, 5, 5);
       fill(255, 0, 0); // Red lights
       ellipse(i * 40 + 20, height - bgLayers[0].height/2 + 5, 5, 5);
     }
+
+    // Show takeoff instructions
+    fill(255);
+    textSize(min(24, width * 0.06)); // Responsive text size
+    textAlign(CENTER);
+    text("Click or Press SPACE to take off!", width/2, height/2);
   }
 
   // Draw pipes
@@ -1607,7 +1652,7 @@ function drawGameplay() {
   vehicle.show();
 
   // Draw score with shadow
-  textSize(40);
+  textSize(min(40, width * 0.1)); // Responsive text size
   textAlign(CENTER);
   fill(0, 100);
   text(floor(scoreAnimation.value), width/2 + 2, 52);
@@ -1615,7 +1660,7 @@ function drawGameplay() {
   text(floor(scoreAnimation.value), width/2, 50);
 
   // Draw game mode indicator
-  textSize(16);
+  textSize(min(16, width * 0.04)); // Responsive text size
   let modeColor;
   switch(gameMode) {
     case "normal":
@@ -1633,19 +1678,19 @@ function drawGameplay() {
 
   // Draw combo multiplier if active
   if (comboMultiplier > 1) {
-      textSize(24);
+    textSize(min(24, width * 0.06)); // Responsive text size
     fill(255, 215, 0);
     text("COMBO x" + comboMultiplier.toFixed(1), width/2, 110);
   }
 
   // Draw streak message if active
   if (messageAlpha > 0) {
-    textSize(30);
+    textSize(min(30, width * 0.075)); // Responsive text size
     fill(255, 255, 255, messageAlpha);
     text(currentMessage, width/2, height/2 - 100);
 
     if (streakCount > 2) {
-      textSize(20);
+      textSize(min(20, width * 0.05)); // Responsive text size
       fill(255, 215, 0, messageAlpha);
       text("STREAK: " + streakCount, width/2, height/2 - 70);
     }
@@ -1665,8 +1710,8 @@ function drawGameOverScreen() {
   rect(0, 0, width, height);
 
   // Draw score panel
-  let panelWidth = 300;
-  let panelHeight = 180;
+  let panelWidth = min(width * 0.8, 400); // Responsive width, max 400px
+  let panelHeight = min(height * 0.5, 250); // Responsive height, max 250px
   let panelX = width/2 - panelWidth/2;
   let panelY = height/4 - panelHeight/2;
 
@@ -1682,18 +1727,18 @@ function drawGameOverScreen() {
 
   // Game over text
   textAlign(CENTER);
-  textSize(36);
+  textSize(min(36, width * 0.09)); // Responsive text size
   fill(200, 50, 50);
   noStroke();
-  text("GAME OVER", width/2, panelY + 40);
+  text("GAME OVER", width/2, panelY + panelHeight * 0.2);
 
   // Score text
-  textSize(24);
+  textSize(min(24, width * 0.06)); // Responsive text size
   fill(50);
-  text("Score: " + score, width/2, panelY + 80);
+  text("Score: " + score, width/2, panelY + panelHeight * 0.4);
 
   // Game mode text
-  textSize(18);
+  textSize(min(18, width * 0.045)); // Responsive text size
   let modeColor;
   switch(gameMode) {
     case "normal":
@@ -1707,14 +1752,14 @@ function drawGameOverScreen() {
       break;
   }
   fill(modeColor);
-  text(gameMode.toUpperCase() + " MODE", width/2, panelY + 105);
+  text(gameMode.toUpperCase() + " MODE", width/2, panelY + panelHeight * 0.55);
 
   // High score
-  textSize(24);
+  textSize(min(24, width * 0.06)); // Responsive text size
   fill(50);
   if (score > highScore) {
     highScore = score;
-    text("NEW HIGH SCORE!", width/2, panelY + 135);
+    text("NEW HIGH SCORE!", width/2, panelY + panelHeight * 0.7);
 
     // Update leaderboard with default player name
     let playerEntry = leaderboard.find(entry => entry.name === "Player");
@@ -1735,7 +1780,7 @@ function drawGameOverScreen() {
       }
     }
   } else {
-    text("Best: " + highScore, width/2, panelY + 135);
+    text("Best: " + highScore, width/2, panelY + panelHeight * 0.7);
   }
 
   // Medal based on score
@@ -1751,7 +1796,8 @@ function drawGameOverScreen() {
   }
 
   if (medalImg) {
-    image(medalImg, panelX + 50, panelY + 80, 50, 50);
+    let medalSize = min(50, width * 0.1); // Responsive medal size
+    image(medalImg, panelX + medalSize, panelY + panelHeight * 0.4, medalSize, medalSize);
   }
 
   // Draw buttons
@@ -1761,7 +1807,7 @@ function drawGameOverScreen() {
   challengeButton.show();
 
   // Draw viral message
-  textSize(18);
+  textSize(min(18, width * 0.045)); // Responsive text size
   fill(255);
   text("SHARE YOUR SCORE!", width/2, height - 20);
 }
@@ -1775,9 +1821,9 @@ function drawAdScreen() {
 
   // Draw progress bar
   fill(50);
-  rect(100, height/2 + 40, width - 200, 20);
+  rect(width * 0.1, height/2 + 40, width * 0.8, 20);
   fill(0, 200, 0);
-  rect(100, height/2 + 40, (width - 200) * progress, 20);
+  rect(width * 0.1, height/2 + 40, width * 0.8 * progress, 20);
 
   // Draw ad text
   textSize(32);
@@ -1790,7 +1836,7 @@ function drawAdScreen() {
 
   // Check if ad is finished
   if (progress >= 1) {
-    vehicle.y = height / 2;
+    vehicle = new Vehicle(); // Create a new vehicle to ensure proper positioning
     vehicle.velocity = 0;
     vehicle.isDead = false;
     gameState = 'playing';
