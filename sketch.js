@@ -1802,7 +1802,7 @@ function drawStartScreen() {
   text("Click or Press Space to fly", width/2, height - 60);
 
   textSize(min(16, width * 0.04)); // Responsive text size
-  text("Control with Mouse or Space Bar", width/2, height - 30);
+  text("Control with Arrow Keys, Page Up/Down, or Mouse", width/2, height - 30);
 }
 
 // Update game during gameplay
@@ -1845,6 +1845,12 @@ function updateGameplay() {
     textSize(24);
     textAlign(CENTER);
     text("Click or Press SPACE to fly!", width/2, height/2-50);
+
+    textSize(18);
+    text("Movement Controls:", width/2, height/2+10);
+    text("↑ / P/ Q / Mouse Scroll Up: Ascend", width/2, height/2+35);
+    text("↓ / L / A / Mouse Scroll Down: Descend", width/2, height/2+60);
+    text("Release to maintain altitude", width/2, height/2+85);
 
     // No pipes spawn during runway mode
     return;
@@ -2363,9 +2369,9 @@ function keyPressed() {
 
   // Handle directional controls
   if (gameState === 'playing') {
-    if (keyCode === UP_ARROW || keyCode === 80 || keyCode === 81) { // Up arrow, P, or Q
+    if (keyCode === UP_ARROW || keyCode === 80 || keyCode === 81 || keyCode === 33) { // Up arrow, P, Q, or Page Up
       vehicle.startAscend();
-    } else if (keyCode === DOWN_ARROW || keyCode === 76 || keyCode === 65) { // Down arrow, L, or A
+    } else if (keyCode === DOWN_ARROW || keyCode === 76 || keyCode === 65 || keyCode === 34) { // Down arrow, L, A, or Page Down
       vehicle.startDescend();
     }
   }
@@ -2373,9 +2379,9 @@ function keyPressed() {
 
 function keyReleased() {
   if (gameState === 'playing') {
-    if (keyCode === UP_ARROW || keyCode === 80 || keyCode === 81) {
+    if (keyCode === UP_ARROW || keyCode === 80 || keyCode === 81 || keyCode === 33) {
       vehicle.stopAscend();
-    } else if (keyCode === DOWN_ARROW || keyCode === 76 || keyCode === 65) {
+    } else if (keyCode === DOWN_ARROW || keyCode === 76 || keyCode === 65 || keyCode === 34) {
       vehicle.stopDescend();
     }
   }
@@ -2732,5 +2738,25 @@ function drawSunMoon() {
     }
   } catch (e) {
     console.error("Error drawing sun or moon:", e);
+  }
+}
+
+// Handle mouse wheel scrolling for flight control
+function mouseWheel(event) {
+  if (gameState === "playing") {
+    // Negative delta means scroll up (ascend)
+    if (event.delta < 0) {
+      vehicle.startAscend();
+      // Apply small timeout to stop ascending if not continuously scrolling
+      setTimeout(() => vehicle.stopAscend(), 200);
+    }
+    // Positive delta means scroll down (descend)
+    else if (event.delta > 0) {
+      vehicle.startDescend();
+      // Apply small timeout to stop descending if not continuously scrolling
+      setTimeout(() => vehicle.stopDescend(), 200);
+    }
+    // Prevent default scrolling behavior
+    return false;
   }
 }
