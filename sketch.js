@@ -160,129 +160,129 @@ function createPlaceholderAssets() {
 
 // Create a placeholder spritesheet
 function createPlaceholderSpritesheet() {
-  let sheet = createGraphics(300, 150);
+  let sheet = createGraphics(450, 225); // Increased from 300x150 to accommodate larger sprites
   sheet.background(0, 0);
 
   // Draw paper plane frames (3 frames with slight animation)
   for (let i = 0; i < 3; i++) {
-    let x = i * 34 + 17;
-    let y = 12;
+    let x = i * 51 + 25; // Adjusted for new width (51px)
+    let y = 18; // Adjusted y position
 
     // Blue paper colors - different shades for 3D effect
     let mainBlue = color(65, 105, 225);      // Royal blue
     let darkBlue = color(30, 60, 180);       // Darker shade for shadows
     let lightBlue = color(100, 150, 255);    // Lighter shade for highlights
 
-    // Draw the paper plane body - main triangle
+    // Draw the paper plane body - main triangle - scaled up by 1.5x
     sheet.fill(mainBlue);
     sheet.noStroke();
     sheet.beginShape();
-    sheet.vertex(x - 15, y);                 // Back point
-    sheet.vertex(x + 10, y - 2 + (i * 0.5)); // Front point (slight animation)
-    sheet.vertex(x - 15, y + 8);             // Bottom back point
+    sheet.vertex(x - 22, y);                 // Back point
+    sheet.vertex(x + 15, y - 3 + (i * 0.75)); // Front point (slight animation)
+    sheet.vertex(x - 22, y + 12);             // Bottom back point
     sheet.endShape(CLOSE);
 
     // Top fold - creates the 3D effect of folded paper
     sheet.fill(lightBlue);
     sheet.beginShape();
-    sheet.vertex(x - 15, y);                 // Back point
-    sheet.vertex(x + 10, y - 2 + (i * 0.5)); // Front point
-    sheet.vertex(x - 3, y - 5 + (i * 0.2));  // Top fold point
+    sheet.vertex(x - 22, y);                 // Back point
+    sheet.vertex(x + 15, y - 3 + (i * 0.75)); // Front point
+    sheet.vertex(x - 4, y - 7 + (i * 0.3));  // Top fold point
     sheet.endShape(CLOSE);
 
     // Bottom fold - shadow side
     sheet.fill(darkBlue);
     sheet.beginShape();
-    sheet.vertex(x - 15, y);                 // Back point
-    sheet.vertex(x - 3, y + 4);              // Center fold point
-    sheet.vertex(x - 15, y + 8);             // Bottom back point
+    sheet.vertex(x - 22, y);                 // Back point
+    sheet.vertex(x - 4, y + 6);              // Center fold point
+    sheet.vertex(x - 22, y + 12);             // Bottom back point
     sheet.endShape(CLOSE);
 
     // Wing fold - right side
     sheet.fill(lightBlue);
     sheet.beginShape();
-    sheet.vertex(x - 15, y);                 // Back point
-    sheet.vertex(x - 3, y - 5 + (i * 0.2));  // Top fold point
-    sheet.vertex(x - 3, y + 4);              // Center fold point
+    sheet.vertex(x - 22, y);                 // Back point
+    sheet.vertex(x - 4, y - 7 + (i * 0.3));  // Top fold point
+    sheet.vertex(x - 4, y + 6);              // Center fold point
     sheet.endShape(CLOSE);
 
     // Wing fold - left side (shadow)
     sheet.fill(darkBlue);
     sheet.beginShape();
-    sheet.vertex(x - 15, y + 8);             // Bottom back point
-    sheet.vertex(x - 3, y + 4);              // Center fold point
-    sheet.vertex(x + 10, y - 2 + (i * 0.5)); // Front point
+    sheet.vertex(x - 22, y + 12);             // Bottom back point
+    sheet.vertex(x - 4, y + 6);
+    sheet.vertex(x + 15, y - 3 + (i * 0.75)); // Front point
     sheet.endShape(CLOSE);
 
     // Fold lines - more prominent
     sheet.stroke(30, 60, 180, 180);
-    sheet.strokeWeight(0.8);
+    sheet.strokeWeight(1.2); // Increased from 0.8
     // Center crease
-    sheet.line(x - 15, y, x + 10, y - 2 + (i * 0.5));
+    sheet.line(x - 22, y, x + 15, y - 3 + (i * 0.75));
     // Wing creases
-    sheet.line(x - 15, y, x - 3, y - 5 + (i * 0.2));
-    sheet.line(x - 15, y, x - 3, y + 4);
-    sheet.line(x - 3, y - 5 + (i * 0.2), x + 10, y - 2 + (i * 0.5));
-    sheet.line(x - 3, y + 4, x + 10, y - 2 + (i * 0.5));
-    sheet.line(x - 15, y + 8, x - 3, y + 4);
+    sheet.line(x - 22, y, x - 4, y - 7 + (i * 0.3));
+    sheet.line(x - 22, y, x - 4, y + 6);
+    sheet.line(x - 4, y - 7 + (i * 0.3), x + 15, y - 3 + (i * 0.75));
+    sheet.line(x - 4, y + 6, x + 15, y - 3 + (i * 0.75));
+    sheet.line(x - 22, y + 12, x - 4, y + 6);
   }
 
   // Draw dead paper plane frame (crumpled blue paper)
-  let x = 17;
-  let y = 36;
+  let x = 25;
+  let y = 54; // Adjusted for new height (36px)
 
-  // Crumpled paper base - blue
+  // Crumpled paper base - blue - scaled up by 1.5x
   sheet.fill(65, 105, 225);
   sheet.noStroke();
   sheet.beginShape();
-  sheet.vertex(x - 12, y - 2);
-  sheet.vertex(x - 5, y - 7);
-  sheet.vertex(x + 3, y - 3);
-  sheet.vertex(x + 8, y - 6);
-  sheet.vertex(x + 10, y + 2);
-  sheet.vertex(x + 5, y + 5);
-  sheet.vertex(x - 2, y + 3);
-  sheet.vertex(x - 8, y + 6);
+  sheet.vertex(x - 18, y - 3);
+  sheet.vertex(x - 7, y - 10);
+  sheet.vertex(x + 4, y - 4);
+  sheet.vertex(x + 12, y - 9);
+  sheet.vertex(x + 15, y + 3);
+  sheet.vertex(x + 7, y + 7);
+  sheet.vertex(x - 3, y + 4);
+  sheet.vertex(x - 12, y + 9);
   sheet.endShape(CLOSE);
 
   // Darker blue areas for crumpled effect
   sheet.fill(30, 60, 180);
   sheet.beginShape();
-  sheet.vertex(x - 5, y - 7);
-  sheet.vertex(x + 3, y - 3);
-  sheet.vertex(x - 2, y + 3);
-  sheet.vertex(x - 8, y + 6);
+  sheet.vertex(x - 7, y - 10);
+  sheet.vertex(x + 4, y - 4);
+  sheet.vertex(x - 3, y + 4);
+  sheet.vertex(x - 12, y + 9);
   sheet.endShape(CLOSE);
 
   // Lighter blue highlights
   sheet.fill(100, 150, 255);
   sheet.beginShape();
-  sheet.vertex(x + 3, y - 3);
-  sheet.vertex(x + 8, y - 6);
-  sheet.vertex(x + 10, y + 2);
-  sheet.vertex(x + 5, y + 5);
+  sheet.vertex(x + 4, y - 4);
+  sheet.vertex(x + 12, y - 9);
+  sheet.vertex(x + 15, y + 3);
+  sheet.vertex(x + 7, y + 7);
   sheet.endShape(CLOSE);
 
   // Crumple lines
   sheet.stroke(30, 60, 180);
-  sheet.strokeWeight(0.7);
-  sheet.line(x - 5, y - 7, x + 5, y + 5);
-  sheet.line(x + 3, y - 3, x - 8, y + 6);
-  sheet.line(x - 12, y - 2, x + 10, y + 2);
-  sheet.line(x + 8, y - 6, x - 2, y + 3);
+  sheet.strokeWeight(1.0); // Increased from 0.7
+  sheet.line(x - 7, y - 10, x + 7, y + 7);
+  sheet.line(x + 4, y - 4, x - 12, y + 9);
+  sheet.line(x - 18, y - 3, x + 15, y + 3);
+  sheet.line(x + 12, y - 9, x - 3, y + 4);
 
   // Draw pipe parts - SIMPLIFIED
   // Top obstacle (single color)
   sheet.fill(255, 0, 0); // Bright red for top obstacle
-  sheet.rect(0, 60, 52, 26);
+  sheet.rect(0, 90, 52, 26);
 
   // Bottom obstacle (single color)
   sheet.fill(0, 0, 255); // Bright blue for bottom obstacle
-  sheet.rect(0, 86, 52, 26);
+  sheet.rect(0, 116, 52, 26);
 
   // Draw cloud types - without outlines
   for (let i = 0; i < 3; i++) {
-    let cloudX = 104 + (i * 60);
+    let cloudX = 156 + (i * 60);
 
     // Create a soft, simple cloud
     sheet.noStroke();
@@ -328,8 +328,8 @@ class Vehicle {
     this.velocity = 0;
     this.gravity = 0.1;
     this.flapStrength = -3; // Reduced from -3 to make flaps less powerful
-    this.width = 34;
-    this.height = 24;
+    this.width = 51; // Increased from 34 (1.5x larger)
+    this.height = 36; // Increased from 24 (1.5x larger)
     this.rotation = 0;
     this.frameCount = 0;
     this.animationSpeed = 0.2;
@@ -543,7 +543,7 @@ class Vehicle {
       // Add white smoke trail effect
       if (frameCount % 2 === 0) {
         this.trail.push({
-          x: this.x - 10,
+          x: this.x - 15,
           y: this.y,
           opacity: 180,
           size: random(3, 6),
@@ -869,9 +869,7 @@ class Pipe {
   }
 
   hits(vehicle) {
-    // More forgiving hitbox for better gameplay
-    // First, check if the plane is horizontally within the pipe's collision area
-    // We'll use the center point of the plane for horizontal detection
+    // Calculate the center of the plane
     let planeCenter = vehicle.x;
 
     // Only check collision if the plane's center is between the pipe's left and right edges
@@ -883,7 +881,7 @@ class Pipe {
 
     // If we're horizontally aligned, check vertical collision
     // Use a smaller hitbox for more forgiving gameplay
-    let planeTop = vehicle.y - vehicle.height/5; // Even more forgiving (1/5 instead of 1/4)
+    let planeTop = vehicle.y - vehicle.height/5; // Keep the same forgiving ratio
     let planeBottom = vehicle.y + vehicle.height/5;
 
     // Check if the plane is in the gap
@@ -1928,7 +1926,7 @@ function drawGameplay() {
         let trailSize = random(5, 10);
         noStroke();
         fill(255, 200, 100, trailOpacity);
-        ellipse(-15 - random(5, 15), random(-3, 3), trailSize, trailSize);
+        ellipse(-22 - random(5, 15), random(-3, 3), trailSize, trailSize);
       }
     } else {
       // Subtle trail behind the plane when stationary
@@ -1937,7 +1935,7 @@ function drawGameplay() {
         let trailSize = map(i, 0, 5, 5, 8);
         noStroke();
         fill(255, 255, 255, trailOpacity);
-        ellipse(-15 - (i * 5), sin(frameCount * 0.05 + i * 0.5) * 2, trailSize, trailSize);
+        ellipse(-22 - (i * 5), sin(frameCount * 0.05 + i * 0.5) * 2, trailSize, trailSize);
       }
     }
 
@@ -1949,9 +1947,9 @@ function drawGameplay() {
     image(
       spriteSheet,
       0, 0,
-      34, 24, // width and height of plane
-      frameIndex * 34, 0, // sprite coordinates
-      34, 24 // sprite dimensions
+      51, 36, // width and height of plane (updated)
+      frameIndex * 51, 0, // sprite coordinates (updated)
+      51, 36 // sprite dimensions (updated)
     );
 
     pop();

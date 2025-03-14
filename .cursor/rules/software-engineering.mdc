@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- **When generating or suggesting code for JavaScript web browser games, prioritize modularity** by structuring the codebase into multiple files, each handling a specific concern. For example:
+  - Use `game.js` for core game logic and state management.
+  - Use `render.js` for rendering and graphics-related code.
+  - Use `input.js` for handling user input.
+  - Use `audio.js` for sound management.
+  - Avoid creating a monolithic codebase by separating concerns into distinct, reusable modules.
+
+- **Optimize performance** by:
+  - Using `requestAnimationFrame` for the game loop to ensure smooth animations and updates.
+  - Minimizing DOM manipulations by batching updates or using canvas/WebGL for rendering where appropriate.
+
+- **Ensure cross-browser compatibility** by:
+  - Writing code that adheres to modern web standards (e.g., ES6+).
+  - Using feature detection (e.g., `if (window.requestAnimationFrame)`) to check for browser support.
+  - Providing fallbacks or polyfills for older browsers when necessary.
+
+- **Manage game assets efficiently** by:
+  - Implementing a preloader or asset manager to load images, sounds, and other resources asynchronously.
+  - Ensuring assets are only loaded once and cached for reuse throughout the game.
