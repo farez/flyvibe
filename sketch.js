@@ -107,13 +107,31 @@ function preload() {
   // Use placeholder spritesheet directly
   spriteSheet = createPlaceholderSpritesheet();
 
-  // Create empty sound objects
+  // Create empty sound objects as fallbacks
   sounds.flap = createEmptySound();
   sounds.score = createEmptySound();
   sounds.hit = createEmptySound();
   sounds.die = createEmptySound();
   sounds.button = createEmptySound();
   sounds.background = createEmptySound();
+
+  // Try to load die.mp3 if it exists
+  try {
+    // Use p5.js loadSound function to load the die.mp3 file from assets directory
+    loadSound('assets/die.mp3',
+      // Success callback
+      (sound) => {
+        sounds.die = sound;
+        console.log('Successfully loaded die.mp3');
+      },
+      // Error callback
+      (err) => {
+        console.log('Could not load die.mp3, using placeholder', err);
+      }
+    );
+  } catch (e) {
+    console.log('Error attempting to load die.mp3:', e);
+  }
 
   // Use default font
   fonts.main = null;
