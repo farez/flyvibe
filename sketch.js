@@ -1711,7 +1711,7 @@ function drawStartScreen() {
   noStroke();
   textSize(min(24, width * 0.06)); // Responsive text size
   fill(255);
-  text("Click or Press Space to Start", width/2, height - 60);
+  text("Click or Press Space to fly", width/2, height - 60);
 
   textSize(min(16, width * 0.04)); // Responsive text size
   text("Control with Mouse or Space Bar", width/2, height - 30);
@@ -1890,11 +1890,35 @@ function drawGameplay() {
       ellipse(i * 40 + 20, height - bgLayers[0].height/2 + 5, 5, 5);
     }
 
-    // Show takeoff instructions
-    fill(255);
-    textSize(min(24, width * 0.06)); // Responsive text size
-    textAlign(CENTER);
-    text("Click or Press SPACE to take off!", width/2, height/2);
+    // Draw animated plane at cruising speed
+    let planeY = height/2 - 60 + sin(frameCount * 0.05) * 5; // Slight bouncing effect
+
+    push();
+    translate(width/2, planeY);
+
+    // Draw a subtle trail behind the plane
+    for (let i = 0; i < 5; i++) {
+      let trailOpacity = map(i, 0, 5, 150, 0);
+      let trailSize = map(i, 0, 5, 5, 8);
+      noStroke();
+      fill(255, 255, 255, trailOpacity);
+      ellipse(-15 - (i * 5), sin(frameCount * 0.05 + i * 0.5) * 2, trailSize, trailSize);
+    }
+
+    // Animate the plane slightly
+    let frameIndex = floor(frameCount * 0.1) % 3;
+
+    // Draw sprite from spritesheet
+    imageMode(CENTER);
+    image(
+      spriteSheet,
+      0, 0,
+      34, 24, // width and height of plane
+      frameIndex * 34, 0, // sprite coordinates
+      34, 24 // sprite dimensions
+    );
+
+    pop();
   }
 
   // Draw pipes
@@ -1902,8 +1926,10 @@ function drawGameplay() {
     pipe.show();
   }
 
-  // Draw vehicle with rainbow effect if enabled
-  vehicle.show();
+  // Draw vehicle only if not in runway mode
+  if (!runwayMode) {
+    vehicle.show();
+  }
 
   // Draw score with shadow
   textSize(min(40, width * 0.1)); // Responsive text size
