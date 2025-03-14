@@ -338,6 +338,11 @@ class Vehicle {
     this.isDead = false;
     this.trail = [];
 
+    // Runway animation properties
+    this.runwayAnimating = false;
+    this.targetX = width * 0.4; // Target x position (normal playing position)
+    this.runwayAnimationSpeed = 0.05; // Animation speed factor
+
     // Bird-like flight physics
     this.wingEnergy = 0;           // Energy from wing flap
     this.wingDecay = 0.995;        // Much slower energy decay
@@ -1723,10 +1728,31 @@ function updateGameplay() {
   let modifier = gameModifiers[gameMode];
 
   if (runwayMode) {
-    // In runway mode, plane stays stationary in the middle of the screen
+    // In runway mode, plane stays at a fixed height
     vehicle.y = height / 2;
     vehicle.velocity = 0;
     vehicle.rotation = 0;
+
+    // Handle runway animation
+    if (vehicle.runwayAnimating) {
+      // Smoothly move the plane backwards to its playing position
+      vehicle.x = lerp(vehicle.x, vehicle.targetX, vehicle.runwayAnimationSpeed);
+
+      // Check if we're close enough to the target position
+      if (abs(vehicle.x - vehicle.targetX) < 1) {
+        vehicle.x = vehicle.targetX;
+        vehicle.runwayAnimating = false;
+      }
+
+      // Show "preparing for takeoff" message during animation
+      fill(255);
+      textSize(24);
+      textAlign(CENTER);
+      text("Preparing for takeoff...", width/2, height/2-50);
+
+      // Don't allow takeoff until animation is complete
+      return;
+    }
 
     // Runway is stationary until takeoff
     runwayX = 0;
@@ -1735,7 +1761,7 @@ function updateGameplay() {
     fill(255);
     textSize(24);
     textAlign(CENTER);
-    text("Click or Press SPACE to take off!", width/2, height/2);
+    text("Click or Press SPACE to fly!", width/2, height/2-50);
 
     // No pipes spawn during runway mode
     return;
@@ -1890,19 +1916,29 @@ function drawGameplay() {
       ellipse(i * 40 + 20, height - bgLayers[0].height/2 + 5, 5, 5);
     }
 
-    // Draw animated plane at cruising speed
-    let planeY = height/2 - 60 + sin(frameCount * 0.05) * 5; // Slight bouncing effect
-
+    // Draw animated plane during runway animation
     push();
-    translate(width/2, planeY);
+    translate(vehicle.x, vehicle.y);
 
-    // Draw a subtle trail behind the plane
-    for (let i = 0; i < 5; i++) {
-      let trailOpacity = map(i, 0, 5, 150, 0);
-      let trailSize = map(i, 0, 5, 5, 8);
-      noStroke();
-      fill(255, 255, 255, trailOpacity);
-      ellipse(-15 - (i * 5), sin(frameCount * 0.05 + i * 0.5) * 2, trailSize, trailSize);
+    // Add engine exhaust effect
+    if (vehicle.runwayAnimating) {
+      // More intense exhaust during runway animation
+      for (let i = 0; i < 3; i++) {
+        let trailOpacity = random(150, 200);
+        let trailSize = random(5, 10);
+        noStroke();
+        fill(255, 200, 100, trailOpacity);
+        ellipse(-15 - random(5, 15), random(-3, 3), trailSize, trailSize);
+      }
+    } else {
+      // Subtle trail behind the plane when stationary
+      for (let i = 0; i < 5; i++) {
+        let trailOpacity = map(i, 0, 5, 150, 0);
+        let trailSize = map(i, 0, 5, 5, 8);
+        noStroke();
+        fill(255, 255, 255, trailOpacity);
+        ellipse(-15 - (i * 5), sin(frameCount * 0.05 + i * 0.5) * 2, trailSize, trailSize);
+      }
     }
 
     // Animate the plane slightly
@@ -2163,21 +2199,24 @@ function drawAdScreen() {
     startGame();
   } else if (gameState === 'playing') {
     if (runwayMode) {
-      // Take off from runway
-      runwayMode = false;
-      vehicle.flap();
-      vehicle.flap(); // Double flap for good initial lift
+      // Only allow takeoff if runway animation is complete
+      if (!vehicle.runwayAnimating) {
+        // Take off from runway
+        runwayMode = false;
+        vehicle.flap();
+        vehicle.flap(); // Double flap for good initial lift
 
-      // Create takeoff particles
-      for (let i = 0; i < 15; i++) {
-        particles.push(new Particle(
-          vehicle.x - 10,
-          vehicle.y + 10,
-          random(-3, -1),
-          random(-1, 1),
-          random(5, 15),
-          color(100, 100, 100, 200) // Smoke particles
-        ));
+        // Create takeoff particles
+        for (let i = 0; i < 15; i++) {
+          particles.push(new Particle(
+            vehicle.x - 10,
+            vehicle.y + 10,
+            random(-3, -1),
+            random(-1, 1),
+            random(5, 15),
+            color(100, 100, 100, 200) // Smoke particles
+          ));
+        }
       }
     } else {
       vehicle.flap();
@@ -2213,21 +2252,24 @@ function keyPressed() {
       startGame();
     } else if (gameState === 'playing') {
       if (runwayMode) {
-        // Take off from runway
-        runwayMode = false;
-        vehicle.flap();
-        vehicle.flap(); // Double flap for good initial lift
+        // Only allow takeoff if runway animation is complete
+        if (!vehicle.runwayAnimating) {
+          // Take off from runway
+          runwayMode = false;
+          vehicle.flap();
+          vehicle.flap(); // Double flap for good initial lift
 
-        // Create takeoff particles
-        for (let i = 0; i < 15; i++) {
-          particles.push(new Particle(
-            vehicle.x - 10,
-            vehicle.y + 10,
-            random(-3, -1),
-            random(-1, 1),
-            random(5, 15),
-            color(100, 100, 100, 200) // Smoke particles
-          ));
+          // Create takeoff particles
+          for (let i = 0; i < 15; i++) {
+            particles.push(new Particle(
+              vehicle.x - 10,
+              vehicle.y + 10,
+              random(-3, -1),
+              random(-1, 1),
+              random(5, 15),
+              color(100, 100, 100, 200) // Smoke particles
+            ));
+          }
         }
       } else {
         vehicle.flap();
@@ -2249,6 +2291,11 @@ function startGame() {
 
   // Reset game elements
   vehicle = new Vehicle();
+
+  // Position the plane further forward for runway animation
+  vehicle.x = width * 0.7; // Start at 70% of screen width
+  vehicle.runwayAnimating = true; // Start the runway animation
+
   pipes = [];
   score = 0;
   scoreAnimation = { value: 0, target: 0, speed: 0.1 };
