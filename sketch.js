@@ -37,7 +37,7 @@ let adDuration = 5000;
 let framesSinceLastPipe = 0;
 let pipeInterval = 200; // Doubled from 100 to 200
 let difficultyLevel = 1;
-let gameSpeed = 1;
+let gameSpeed = 2; // Doubled from 1 to 2 for faster gameplay
 let parallaxSpeed = 0.5;
 let flashOpacity = 0;
 let shakeAmount = 0;
@@ -1956,8 +1956,8 @@ function updateGameplay() {
         // Increase difficulty level (capped at 8)
         difficultyLevel = min(8, 1 + floor(score / 15));
 
-        // Gradually increase game speed (capped at 1.3)
-        gameSpeed = min(1.3, 1 + (score / 150));
+        // Gradually increase game speed (capped at 2.6)
+        gameSpeed = min(2.6, 2 + (score / 150));
 
         // Day/night transition is now handled by the continuous cycle
       }
@@ -2417,7 +2417,7 @@ function startGame() {
   score = 0;
   scoreAnimation = { value: 0, target: 0, speed: 0.1 };
   difficultyLevel = 1;
-  gameSpeed = 1;
+  gameSpeed = 2; // Doubled from 1 to 2 for faster gameplay
   framesSinceLastPipe = 0;
   pipeInterval = 240; // Doubled from 120 to 240
   streakCount = 0;
@@ -2461,7 +2461,7 @@ function resetGame() {
   scoreAnimation = { value: 0, target: 0, speed: 0.1 };
   gameState = 'start';
   difficultyLevel = 1;
-  gameSpeed = 1;
+  gameSpeed = 2; // Doubled from 1 to 2 for faster gameplay
   framesSinceLastPipe = 0;
   // Increase initial pipe interval to give player more time between pipes
   pipeInterval = 240; // Doubled from 120 to 240
