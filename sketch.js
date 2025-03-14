@@ -343,9 +343,6 @@ class Vehicle {
     constructor() {
     this.x = width * 0.4; // Position at 40% (2/5) of screen width instead of 20%
     this.y = height / 2; // This already positions the plane in the middle of the screen height
-    this.velocity = 0;
-    this.gravity = 0.1;
-    this.flapStrength = -3; // Reduced from -3 to make flaps less powerful
     this.width = 51; // Increased from 34 (1.5x larger)
     this.height = 36; // Increased from 24 (1.5x larger)
     this.rotation = 0;
@@ -361,17 +358,15 @@ class Vehicle {
     this.targetX = width * 0.4; // Target x position (normal playing position)
     this.runwayAnimationSpeed = 0.05; // Animation speed factor
 
-    // Bird-like flight physics
-    this.wingEnergy = 0;           // Energy from wing flap
-    this.wingDecay = 0.995;        // Much slower energy decay
-    this.flapCooldown = 0;         // Prevent rapid flapping
-    this.maxFlapCooldown = 6;      // Frames to wait between flaps
-    this.flapMomentum = 0;         // Forward momentum from flapping
-    this.maxFlapMomentum = 0.8;    // Maximum momentum
-    this.momentumDecay = 0.59;     // Slow momentum decay
-    this.liftCoefficient = 0.025;  // Lift coefficient
-    this.baseLift = 0.02;          // Constant base lift factor
-    // Removed consecutiveFlaps and flapDiminishFactor
+    // Direct control flight mechanics with improved physics
+    this.verticalSpeed = 0;            // Current vertical speed
+    this.maxVerticalSpeed = 2.5;       // Slightly reduced max speed for more control
+    this.verticalAcceleration = 0.15;  // Reduced for smoother acceleration
+    this.inertiaFactor = 0.93;         // Inertia factor for realistic deceleration
+    this.movingUp = false;             // Flag for moving up
+    this.movingDown = false;           // Flag for moving down
+    this.previousDirection = 0;        // Track previous direction for turning resistance
+    this.turnResistance = 0.8;         // Resistance when changing direction suddenly
 
     // Weather effects for stormy mode
     this.weatherEffectTimer = 0;
@@ -389,23 +384,48 @@ class Vehicle {
 
     update() {
     if (!this.isDead) {
-      // Decrease flap cooldown
-      if (this.flapCooldown > 0) {
-        this.flapCooldown--;
+      // Handle vertical movement based on controls with smooth transitions
+      if (this.movingUp) {
+        // Check if changing direction - if so, apply turn resistance
+        let accelerationModifier = 1.0;
+        if (this.verticalSpeed > 0) {
+          // Changing from down to up - apply turn resistance
+          accelerationModifier = this.turnResistance;
+        }
+
+        // Accelerate upward with appropriate modifier
+        this.verticalSpeed -= this.verticalAcceleration * accelerationModifier;
+        if (this.verticalSpeed < -this.maxVerticalSpeed) {
+          this.verticalSpeed = -this.maxVerticalSpeed;
+        }
+
+        // Track direction
+        this.previousDirection = -1; // Up
+      } else if (this.movingDown) {
+        // Check if changing direction - if so, apply turn resistance
+        let accelerationModifier = 1.0;
+        if (this.verticalSpeed < 0) {
+          // Changing from up to down - apply turn resistance
+          accelerationModifier = this.turnResistance;
+        }
+
+        // Accelerate downward with appropriate modifier
+        this.verticalSpeed += this.verticalAcceleration * accelerationModifier;
+        if (this.verticalSpeed > this.maxVerticalSpeed) {
+          this.verticalSpeed = this.maxVerticalSpeed;
+        }
+
+        // Track direction
+        this.previousDirection = 1; // Down
+      } else {
+        // Gradually ease to straight flight instead of immediate change
+        this.verticalSpeed *= this.inertiaFactor; // Dampening factor for smooth transition
+        // Only zero out very small values to avoid jitter
+        if (abs(this.verticalSpeed) < 0.1) {
+          this.verticalSpeed = 0;
+          this.previousDirection = 0; // Neutral
+        }
       }
-      // Removed consecutiveFlaps counter reset
-
-      // Wing energy decays over time
-      this.wingEnergy *= this.wingDecay;
-
-      // Forward momentum decays over time
-      this.flapMomentum *= this.momentumDecay;
-
-      // Calculate lift based on forward momentum plus base lift
-      let lift = (this.flapMomentum * this.liftCoefficient) + this.baseLift;
-
-      // Apply gravity, wing energy and lift to velocity
-      this.velocity += this.gravity - this.wingEnergy - lift;
 
       // Apply weather effects in stormy mode
       if (gameMode === 'stormy') {
@@ -461,8 +481,8 @@ class Vehicle {
             // Apply the current weather effect
             switch(this.weatherEffectType) {
               case 'airpocket':
-                // Subtle drop - increase gravity very slightly
-                this.velocity += this.weatherEffectIntensity;
+                // Add temporary vertical speed for air pocket
+                this.verticalSpeed += this.weatherEffectIntensity;
                 break;
               case 'headwind':
                 // Slow down pipes temporarily
@@ -477,6 +497,7 @@ class Vehicle {
 
           // Create weather effect particles
           if (frameCount % 3 === 0) {
+            // Create particles based on weather effect type
             // Only create effect particles if we're past the warning phase
             if (!this.weatherEffectWarning) {
               let particleColor;
@@ -539,23 +560,31 @@ class Vehicle {
         }
       }
 
-      this.y += this.velocity;
+      // Apply vertical movement
+      this.y += this.verticalSpeed;
 
-      // Animate rotation based on velocity and wing energy - more subtle
-      let targetRotation = constrain(map(this.velocity, -10, 15, -PI/8, PI/2), -PI/8, PI/2);
-      // Add a very slight upward tilt when actively flapping
-      if (this.wingEnergy > 0.01) {
-        targetRotation -= this.wingEnergy * 0.1; // Reduced tilt effect
-      }
-      // Smoother, more gradual rotation transition
-      this.rotation = lerp(this.rotation, targetRotation, 0.05); // Slower transition
+      // Calculate a more nuanced rotation based on vertical movement and direction changes
+      // Base rotation depends on vertical speed
+      let baseRotation = constrain(map(this.verticalSpeed, -this.maxVerticalSpeed, this.maxVerticalSpeed, -PI/10, PI/5), -PI/10, PI/5);
 
-      // Update animation frame - slightly speed up animation during active flapping
-      let currentAnimSpeed = this.animationSpeed;
-      if (this.wingEnergy > 0.01) {
-        currentAnimSpeed = this.animationSpeed * 1.2; // Reduced animation speed increase
+      // Add a slight banking effect when changing directions
+      let bankingEffect = 0;
+      if (this.movingUp && this.previousDirection >= 0) {
+        // Banking when starting to go up
+        bankingEffect = -PI/32;
+      } else if (this.movingDown && this.previousDirection <= 0) {
+        // Banking when starting to go down
+        bankingEffect = PI/32;
       }
-      this.frameCount += currentAnimSpeed;
+
+      // Combine effects for target rotation
+      let targetRotation = baseRotation + bankingEffect;
+
+      // Apply smoother rotation transition - slower lerp for more gradual changes
+      this.rotation = lerp(this.rotation, targetRotation, 0.05);
+
+      // Update animation frame
+      this.frameCount += this.animationSpeed;
       this.currentFrame = this.frames[floor(this.frameCount) % this.frames.length];
 
       // Add white smoke trail effect
@@ -569,10 +598,14 @@ class Vehicle {
         });
       }
 
-      // Limit top of screen
+      // Limit top and bottom of screen
       if (this.y < this.height/2) {
         this.y = this.height/2;
-        this.velocity = 0;
+        this.verticalSpeed = 0;
+      }
+      if (this.y > height - this.height/2) {
+        this.y = height - this.height/2;
+        this.verticalSpeed = 0;
       }
     }
 
@@ -587,38 +620,67 @@ class Vehicle {
     }
   }
 
-    flap() {
-    if (!this.isDead && this.flapCooldown <= 0) {
-      // Set cooldown to prevent rapid flapping
-      this.flapCooldown = this.maxFlapCooldown;
+    startAscend() {
+    if (!this.isDead) {
+      this.movingUp = true;
+      this.movingDown = false;
 
-      // Removed tracking consecutive flaps
-      // Removed diminishing factor calculation
+      // Add some smoke particles for visual feedback - directionally appropriate
+      if (frameCount % 8 === 0) {
+        // More particles when changing direction for visual emphasis
+        let particleCount = this.previousDirection > 0 ? 3 : 1;
 
-      // Initial burst of upward force - reduced for less height
-      this.velocity = this.flapStrength * 0.2; // Reduced from 0.25 to 0.2
-
-      // Add wing energy that dissipates over time - reduced for less height
-      this.wingEnergy = 0.05; // Reduced from 0.08 to 0.05
-
-      // Add forward momentum from flapping - consistent for every flap
-      let momentumGain = 0.25;
-      this.flapMomentum = min(this.flapMomentum + momentumGain, this.maxFlapMomentum);
-
-      sounds.flap.play();
-
-      // Add white smoke particles with more varied velocities
-      for (let i = 0; i < 5; i++) {
-        particles.push(new Particle(
-          this.x - 5,
-          this.y + random(-5, 5),
-          random(-2.5, -0.5), // More varied horizontal velocity
-          random(-1.5, 1.5),  // More varied vertical velocity
-          random(4, 8),
-          color(255, 255, 255, 150)
-        ));
+        for (let i = 0; i < particleCount; i++) {
+          particles.push(new Particle(
+            this.x - 5 + random(-3, 3),
+            this.y + 5 + random(-2, 2),
+            random(-2, -0.5),
+            random(0, 1.5) * (this.previousDirection > 0 ? 1.5 : 1),  // Stronger upward particles when changing direction
+            random(3, 6),
+            color(255, 255, 255, this.previousDirection > 0 ? 180 : 150)
+          ));
+        }
       }
     }
+  }
+
+  startDescend() {
+    if (!this.isDead) {
+      this.movingDown = true;
+      this.movingUp = false;
+
+      // Add some smoke particles for visual feedback - directionally appropriate
+      if (frameCount % 8 === 0) {
+        // More particles when changing direction for visual emphasis
+        let particleCount = this.previousDirection < 0 ? 3 : 1;
+
+        for (let i = 0; i < particleCount; i++) {
+          particles.push(new Particle(
+            this.x - 5 + random(-3, 3),
+            this.y - 5 + random(-2, 2),
+            random(-2, -0.5),
+            random(-1.5, 0) * (this.previousDirection < 0 ? 1.5 : 1),  // Stronger downward particles when changing direction
+            random(3, 6),
+            color(255, 255, 255, this.previousDirection < 0 ? 180 : 150)
+          ));
+        }
+      }
+    }
+  }
+
+  stopVerticalMovement() {
+    this.movingUp = false;
+    this.movingDown = false;
+  }
+
+  stopAscend() {
+    this.movingUp = false;
+    // If both are false now, the plane will maintain its current altitude
+  }
+
+  stopDescend() {
+    this.movingDown = false;
+    // If both are false now, the plane will maintain its current altitude
   }
 
   show() {
@@ -2224,8 +2286,6 @@ function drawAdScreen() {
       if (!vehicle.runwayAnimating) {
         // Take off from runway
         runwayMode = false;
-        vehicle.flap();
-        vehicle.flap(); // Double flap for good initial lift
 
         // Create takeoff particles
         for (let i = 0; i < 15; i++) {
@@ -2240,7 +2300,12 @@ function drawAdScreen() {
         }
       }
     } else {
-      vehicle.flap();
+      // Handle mouse controls for flying
+      if (mouseButton === LEFT) {
+        vehicle.startAscend();
+      } else if (mouseButton === RIGHT) {
+        vehicle.startDescend();
+      }
     }
   } else if (gameState === 'gameover') {
     // Check button clicks
@@ -2277,8 +2342,6 @@ function keyPressed() {
         if (!vehicle.runwayAnimating) {
           // Take off from runway
           runwayMode = false;
-          vehicle.flap();
-          vehicle.flap(); // Double flap for good initial lift
 
           // Create takeoff particles
           for (let i = 0; i < 15; i++) {
@@ -2292,11 +2355,38 @@ function keyPressed() {
             ));
           }
         }
-      } else {
-        vehicle.flap();
       }
     } else if (gameState === 'gameover') {
       resetGame();
+    }
+  }
+
+  // Handle directional controls
+  if (gameState === 'playing') {
+    if (keyCode === UP_ARROW || keyCode === 80 || keyCode === 81) { // Up arrow, P, or Q
+      vehicle.startAscend();
+    } else if (keyCode === DOWN_ARROW || keyCode === 76 || keyCode === 65) { // Down arrow, L, or A
+      vehicle.startDescend();
+    }
+  }
+}
+
+function keyReleased() {
+  if (gameState === 'playing') {
+    if (keyCode === UP_ARROW || keyCode === 80 || keyCode === 81) {
+      vehicle.stopAscend();
+    } else if (keyCode === DOWN_ARROW || keyCode === 76 || keyCode === 65) {
+      vehicle.stopDescend();
+    }
+  }
+}
+
+function mouseReleased() {
+  if (gameState === 'playing') {
+    if (mouseButton === LEFT) {
+      vehicle.stopAscend();
+    } else if (mouseButton === RIGHT) {
+      vehicle.stopDescend();
     }
   }
 }
