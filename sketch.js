@@ -133,6 +133,24 @@ function preload() {
     console.log('Error attempting to load die.mp3:', e);
   }
 
+  // Try to load background.mp3 if it exists
+  try {
+    // Use p5.js loadSound function to load the background.mp3 file from assets directory
+    loadSound('assets/background.mp3',
+      // Success callback
+      (sound) => {
+        sounds.background = sound;
+        console.log('Successfully loaded background.mp3');
+      },
+      // Error callback
+      (err) => {
+        console.log('Could not load background.mp3, using placeholder', err);
+      }
+    );
+  } catch (e) {
+    console.log('Error attempting to load background.mp3:', e);
+  }
+
   // Use default font
   fonts.main = null;
 
@@ -638,6 +656,11 @@ class Vehicle {
       this.isDead = true;
       sounds.hit.play();
       setTimeout(() => sounds.die.play(), 500);
+
+      // Stop background music
+      if (sounds.background) {
+        sounds.background.stop();
+      }
 
       // Create white smoke explosion
       for (let i = 0; i < 20; i++) {
@@ -2294,6 +2317,12 @@ function startGame() {
   vehicle.x = width * 0.7; // Start at 70% of screen width
   vehicle.runwayAnimating = true; // Start the runway animation
 
+  // Play background music
+  if (sounds.background) {
+    sounds.background.setVolume(0.5); // Set volume to 50%
+    sounds.background.loop(); // Loop the background music
+  }
+
   pipes = [];
   score = 0;
   scoreAnimation = { value: 0, target: 0, speed: 0.1 };
@@ -2324,6 +2353,11 @@ function startGame() {
 
 // Reset the game to initial state
 function resetGame() {
+  // Stop background music
+  if (sounds.background) {
+    sounds.background.stop();
+  }
+
   vehicle = new Vehicle();
 
   // Reset any active weather effects
